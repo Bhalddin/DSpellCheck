@@ -113,6 +113,18 @@ void AspellInterface::SetMultipleLanguages (std::vector<TCHAR *> *List)
   }
 }
 
+static void FilleVectorFromAspellWordList (const AspellWordList *WordList, std::vector<char *> *TargetVector)
+{
+  AspellStringEnumeration * els = aspell_word_list_elements(WordList);
+  const char *Suggestion;
+  while ((Suggestion = aspell_string_enumeration_next(els)) != 0)
+  {
+    char *Buf = 0;
+    SetString (Buf, Suggestion);
+    TargetVector->push_back (Buf);
+  }
+}
+
 std::vector<char *> *AspellInterface::GetSuggestions (char *Word)
 {
   const AspellWordList *WordList = 0, *CurWordList = 0;
@@ -129,11 +141,11 @@ std::vector<char *> *AspellInterface::GetSuggestions (char *Word)
   {
     LastSelectedSpeller = SingularSpeller;
     WordList = aspell_speller_suggest (SingularSpeller, TargetWord, -1);
+    FilleVectorFromAspellWordList (WordList, SuggList);
   }
   else
   {
     int MaxSize = -1;
-    int Size;
     // In this mode we're finding maximum by length list from selected languages
     CurWordList = 0;
     for (int i = 0; i < (int) Spellers->size (); i++)
@@ -141,30 +153,15 @@ std::vector<char *> *AspellInterface::GetSuggestions (char *Word)
       CurWordList = aspell_speller_suggest (Spellers->at (i), TargetWord, -1);
 
       AspellStringEnumeration * els = aspell_word_list_elements(CurWordList);
-      Size = aspell_word_list_size (CurWordList);
 
-      if (Size > MaxSize)
-      {
-        MaxSize = Size;
-        LastSelectedSpeller = Spellers->at (i);
-        WordList = CurWordList;
-      }
+      FilleVectorFromAspellWordList (CurWordList, SuggList);
     }
+    StripEqualElements (SuggList);
+    SortStringVectorByDamerauLevenshteinDistanceUtf8 (SuggList, TargetWord);
   }
-  if (!WordList)
-    return 0;
 
-  AspellStringEnumeration * els = aspell_word_list_elements(WordList);
-  const char *Suggestion;
   TCHAR *Buf = 0;
   int Counter = 0;
-
-  while ((Suggestion = aspell_string_enumeration_next(els)) != 0)
-  {
-    char *Buf = 0;
-    SetString (Buf, Suggestion);
-    SuggList->push_back (Buf);
-  }
 
   if (CurrentEncoding == ENCODING_ANSI)
     CLEAN_AND_ZERO_ARR (TargetWord);

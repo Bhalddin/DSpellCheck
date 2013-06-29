@@ -69,5 +69,8 @@ bool SortCompareChars (char *a, char *b);
 
 BOOL CheckForDirectoryExistence (TCHAR *Path, BOOL Silent = TRUE, HWND NppWindow = 0);
 TCHAR *GetLastSlashPosition (TCHAR *Path);
+void SortStringVectorByLevenshteinDistanceUtf8 (std::vector <char *> *Vector, char *Word);
+void SortStringVectorByDamerauLevenshteinDistanceUtf8 (std::vector <char *> *Vector, char *Word);;
+void StripEqualElements (std::vector <char *> *&Vector); // Warning - changes pointer, vector order is being spoiled in process
 
 #endif // COMMON_FUNCTIONS_H;

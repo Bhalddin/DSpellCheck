@@ -22,6 +22,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "Plugin.h"
 #include "PluginInterface.h"
 
+#include <hash_map>
+
 void SetString (char *&Target, const char *Str)
 {
   if (Target == Str)
@@ -151,6 +153,7 @@ void SetStringDUtf8 (char *&Target, const TCHAR *Str)
 #else // !UNICODE
   iconv_t Converter = iconv_open ("UTF-8//IGNORE", "UCS-2LE");
 #endif // !UNICODE
+  CLEAN_AND_ZERO_ARR (Target);
   size_t InSize = (_tcslen (Str) + 1) * sizeof (TCHAR);
   size_t OutSize = 6 * _tcslen (Str) + 1; // Maximum Possible UTF-8 size
   char *TempBuf = new char[OutSize];
@@ -211,6 +214,7 @@ void SetStringDUtf8 (char *&Target, const char *Str)
   if (Target == Str)
     return;
   iconv_t Converter = iconv_open ("UTF-8//IGNORE", "CHAR");
+  CLEAN_AND_ZERO_ARR (Target);
   size_t InSize = strlen (Str) + 1;
   size_t OutSize = 6 * strlen (Str) + 1; // Maximum Possible UTF-8 size
   char *TempBuf = new char[OutSize];
@@ -226,6 +230,19 @@ void SetStringDUtf8 (char *&Target, const char *Str)
   }
   SetString (Target, TempBuf); // Cutting off unnecessary symbols.
   CLEAN_AND_ZERO_ARR (TempBuf);
+}
+
+void SetStringToFirstUtf8Char (char *&Dest, const char *Source)
+{
+  if (Dest == Source)
+    return;
+  CLEAN_AND_ZERO_ARR (Dest);
+  if (!*Source)
+    return;
+  size_t Len = Utf8GetCharSize (*Source);
+  Dest = new char[Len + 1];
+  strncpy (Dest, Source, Len);
+  Dest[Len] = '\0';
 }
 
 // This function is more or less transferred from gcc source
@@ -670,6 +687,208 @@ BOOL CheckForDirectoryExistence (TCHAR *Path, BOOL Silent, HWND NppWindow)
       return FALSE;
   }
   return TRUE;
+}
+
+// Copied from corresponding Wikipedia page and modified
+static int LevenshteinDistanceUtf8 (char *S, char *T)
+{
+  char *SIterator;
+  char *TIterator;
+  // degenerate cases
+  if (strcmp (S,T) == 0) return 0;
+  size_t SLength = Utf8Length (S);
+  size_t TLength = Utf8Length (T);
+  if (SLength == 0) return TLength;
+  if (TLength == 0) return SLength;
+
+  // create two work vectors of integer distances
+  int *V0 = new int[TLength + 1];
+  int *V1 = new int[TLength + 1];
+
+  // initialize v0 (the previous row of distances)
+  // this row is A[0][i]: edit distance for an empty s
+  // the distance is just the number of characters to delete from t
+
+  for (size_t i = 0; i < TLength + 1; i++)
+    V0[i] = i;
+
+  SIterator = S;
+  for (size_t i = 0; i < SLength; i++, SIterator = Utf8Inc (SIterator))
+  {
+    // calculate v1 (current row distances) from the previous row v0
+
+    // first element of v1 is A[i+1][0]
+    // edit distance is delete (i+1) chars from s to match empty t
+    V1[0] = i + 1;
+
+    // use formula to fill in the rest of the row
+    TIterator = T;
+    for (size_t j = 0; j < TLength; j++, TIterator = Utf8Inc (TIterator))
+    {
+      int cost = Utf8FirstCharsAreEqual (SIterator, TIterator) ? 0 : 1;
+      V1[j + 1] = min (V1[j] + 1, min (V0[j + 1] + 1, V0[j] + cost));
+    }
+
+    // copy v1 (current row) to v0 (previous row) for next iteration
+    for (size_t j = 0; j < TLength + 1; j++)
+      V0[j] = V1[j];
+  }
+
+  int Result = V1[TLength];
+  CLEAN_AND_ZERO_ARR (V0);
+  CLEAN_AND_ZERO_ARR (V1);
+  return Result;
+}
+
+static BOOL _min (int a, int b)
+{
+  return a < b ? a : b;
+}
+
+static BOOL _max (int a, int b)
+{
+  return a > b ? a : b;
+}
+
+static int DamerauLevenshteinDistanceUtf8 (char *Source, char *Target)
+{
+  size_t SourceLength = Utf8Length (Source);
+  size_t TargetLength = Utf8Length (Target);
+  if (Source == 0 || *Source == 0)
+  {
+    if (Target == 0 || *Target == 0)
+    {
+      return 0;
+    }
+    else
+    {
+      return TargetLength;
+    }
+  }
+  else if (Target == 0 || *Target == 0)
+  {
+    return SourceLength;
+  }
+
+  int W = (SourceLength + 2);
+  int H = (TargetLength + 2);
+  int *Score = new int[(SourceLength + 2) * (TargetLength + 2)];
+
+  int Inf = SourceLength + TargetLength;
+  Score[0] = Inf;
+  for (size_t i = 0; i <= SourceLength; i++) { Score[(i + 1) * H + 1] = i; Score [(i + 1) * H + 0] = Inf; }
+  for (size_t j = 0; j <= TargetLength; j++) { Score[1 * H + (j + 1)] = j; Score [0 * H + (j + 1)] = Inf; }
+
+  stdext::hash_map <char *, int, hash_compare_strings> Sd;
+
+  char *Iterators[2] = {Source, Target};
+  for (int i = 0; i < countof (Iterators); i++)
+  {
+    while (TRUE)
+    {
+      char *TempString = 0;
+      if (!*Iterators[i])
+        break;
+      SetStringToFirstUtf8Char (TempString, Iterators[i]);
+      if (Sd.find (TempString) == Sd.end ())
+        Sd[TempString] = 0;
+      else
+        CLEAN_AND_ZERO_ARR (TempString);
+      Iterators[i] = Utf8Inc (Iterators[i]);
+    }
+  }
+
+  char *SourceIterator = Source;
+  for (size_t i = 1; i <= SourceLength; i++, SourceIterator = Utf8Inc (SourceIterator))
+  {
+    int DB = 0;
+    char *TargetIterator = Target;
+    for (size_t j = 1; j <= TargetLength; j++, TargetIterator = Utf8Inc (TargetIterator))
+    {
+      char *TempString = 0;
+      SetStringToFirstUtf8Char (TempString, TargetIterator);
+
+      int i1 = Sd[TempString];
+      int j1 = DB;
+      CLEAN_AND_ZERO_ARR (TempString);
+
+      if (Source[i - 1] == Target[j - 1])
+      {
+        Score[(i + 1) * H + (j + 1)] = Score[i * H + j];
+        DB = j;
+      }
+      else
+      {
+        Score[(i + 1) * H + (j + 1)] = std::min<int> (Score[i * H + j], std::min<int> (Score[(i + 1) * H + j], Score[i * H + (j + 1)])) + 1;
+      }
+
+      Score[(i + 1) * H + (j + 1)] = std::min<int> (Score[(i + 1) * H + (j + 1)], Score[i1 * H + j1] + (i - i1 - 1) + 1 + (j - j1 - 1));
+    }
+    char *TempString = 0;
+    SetStringToFirstUtf8Char (TempString, SourceIterator);
+    Sd[TempString] = i;
+    CLEAN_AND_ZERO_ARR (TempString);
+  }
+
+  int Result = Score[(SourceLength + 1) * H  + (TargetLength + 1)];
+  CLEAN_AND_ZERO_ARR (Score);
+
+  stdext::hash_map <char *, int, hash_compare_strings>::iterator It;
+  for (It = Sd.begin (); It != Sd.end (); ++It)
+    delete [](*It).first;
+
+  return Result;
+}
+
+class LevenshteinSortComparatorUtf8
+{
+public:
+  char * T;
+  LevenshteinSortComparatorUtf8 (char *TArg) { T = TArg; }
+  bool operator()(char *S1, char *S2)
+  {
+    return (LevenshteinDistanceUtf8 (S1, T) < LevenshteinDistanceUtf8 (S2, T));
+  }
+};
+
+class DamerauLevenshteinSortComparatorUtf8
+{
+public:
+  char * T;
+  DamerauLevenshteinSortComparatorUtf8 (char *TArg) { T = TArg; }
+  bool operator()(char *S1, char *S2)
+  {
+    return (DamerauLevenshteinDistanceUtf8 (S1, T) < DamerauLevenshteinDistanceUtf8 (S2, T));
+  }
+};
+
+void SortStringVectorByLevenshteinDistanceUtf8 (std::vector <char *> *Vector, char *Word)
+{
+  std::sort (Vector->begin (), Vector->end (), LevenshteinSortComparatorUtf8 (Word));
+}
+
+void SortStringVectorByDamerauLevenshteinDistanceUtf8 (std::vector <char *> *Vector, char *Word)
+{
+  std::sort (Vector->begin (), Vector->end (), DamerauLevenshteinSortComparatorUtf8 (Word));
+}
+
+void StripEqualElements (std::vector <char *> *&Vector)
+{
+  std::sort (Vector->begin (), Vector->end (), SortCompareChars);
+  std::vector <char *> *NewVector = new std::vector <char *>;
+  for (size_t i = 0; i < Vector->size (); i++)
+  {
+    if (i == 0 || strcmp (Vector->at (i), Vector->at (i - 1)) != 0)
+      NewVector->push_back (Vector->at (i));
+  }
+
+  for (size_t i = 1; i < Vector->size (); i++)
+  {
+    if (strcmp (Vector->at (i), Vector->at (i - 1)) == 0)
+      delete [] Vector->at (i);
+  }
+  CLEAN_AND_ZERO (Vector);
+  Vector = NewVector;
 }
 
 TCHAR *GetLastSlashPosition (TCHAR *Path)
