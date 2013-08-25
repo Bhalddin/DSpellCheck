@@ -24,19 +24,19 @@ struct NppData;
 
 void SetString (char *&Target, const char *Str);
 
-void SetString (TCHAR *&Target, const TCHAR *Str);
+void SetString (wchar_t *&Target, const wchar_t *Str);
 
-void SetString (char *&Target, const TCHAR *Str);
+void SetString (char *&Target, const wchar_t *Str);
 
-void SetString (TCHAR *&Target, const char *Str);
+void SetString (wchar_t *&Target, const char *Str);
 
 // In case source is in UTF-8
 void SetStringSUtf8 (char *&Target, const char *Str);
-void SetStringSUtf8 (TCHAR *&Target, const char *Str);
+void SetStringSUtf8 (wchar_t *&Target, const char *Str);
 
 // In case destination is in UTF-8
 void SetStringDUtf8 (char *&Target, const char *Str);
-void SetStringDUtf8 (char *&Target, const TCHAR *Str);
+void SetStringDUtf8 (char *&Target, const wchar_t *Str);
 
 BOOL SetStringWithAliasApplied (TCHAR *&Target, TCHAR *OrigName);
 
