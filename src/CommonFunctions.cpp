@@ -52,7 +52,7 @@ void SetString (char *&Target, const wchar_t *Str)
   size_t res = (size_t) -1;
 
   iconv_t Converter = iconv_open ("CHAR//IGNORE", "UCS-2LE");
-  size_t InSize = (_tcslen (Str) + 1) * sizeof (TCHAR);
+  size_t InSize = (_tcslen (Str) + 1) * sizeof (wchar_t);
 
   while (*Str)
   {
@@ -81,8 +81,8 @@ void SetString (char *&Target, const wchar_t *Str)
 void SetString (wchar_t *&Target, const char *Str)
 {
   CLEAN_AND_ZERO_ARR (Target);
-  size_t OutSize = sizeof (TCHAR) * (strlen (Str) + 1);
-  Target = new TCHAR [OutSize];
+  size_t OutSize = sizeof (wchar_t) * (strlen (Str) + 1);
+  Target = new wchar_t [OutSize];
   char *OutBuf = (char *) Target;
 
   iconv_t Converter = iconv_open ("UCS-2LE//IGNORE", "CHAR");
@@ -102,8 +102,8 @@ void SetStringSUtf8 (wchar_t *&Target, const char *Str)
   iconv_t Converter = iconv_open ("UCS-2LE//IGNORE", "UTF-8");
   CLEAN_AND_ZERO_ARR (Target);
   size_t InSize = strlen (Str) + 1;
-  size_t OutSize = (Utf8Length (Str) + 1) * sizeof (TCHAR);
-  Target = new TCHAR[OutSize];
+  size_t OutSize = (Utf8Length (Str) + 1) * sizeof (wchar_t);
+  Target = new wchar_t[OutSize];
   char *OutBuf = (char *) Target;
   size_t res = iconv (Converter, &Str, &InSize, &OutBuf, &OutSize);
   iconv_close (Converter);
@@ -119,7 +119,7 @@ void SetStringDUtf8 (char *&Target, const wchar_t *Str)
 {
   iconv_t Converter = iconv_open ("UTF-8//IGNORE", "UCS-2LE");
   CLEAN_AND_ZERO_ARR (Target);
-  size_t InSize = (_tcslen (Str) + 1) * sizeof (TCHAR);
+  size_t InSize = (_tcslen (Str) + 1) * sizeof (wchar_t);
   size_t OutSize = 6 * _tcslen (Str) + 1; // Maximum Possible UTF-8 size
   char *TempBuf = new char[OutSize];
   char *OutBuf = (char *) TempBuf;
@@ -134,6 +134,40 @@ void SetStringDUtf8 (char *&Target, const wchar_t *Str)
   }
   SetString (Target, TempBuf); // Cutting off unnecessary symbols.
   CLEAN_AND_ZERO_ARR (TempBuf);
+}
+
+void SetStringSUtf8Safe (wchar_t *&Target, const char *Str, size_t *&Indexation, const wchar_t c)
+{
+  iconv_t Converter = iconv_open ("UCS-2LE", "UTF-8");
+  CLEAN_AND_ZERO_ARR (Target);
+  CLEAN_AND_ZERO_ARR (Indexation);
+  size_t InSize = 0;
+  size_t OutLength = Utf8Length (Str) + 1;
+  Target = new wchar_t[OutLength];
+  Indexation = new size_t[OutLength];
+  size_t OutSize = OutLength * 2;
+  int CurrentIndex = 0;
+  Indexation[0] = 0;
+  size_t res = (size_t) -1;
+  const char *OriginalStr = Str;
+  char *OutBuf = (char *) Target;
+  while (*Str)
+  {
+    InSize = Utf8GetCharSize (*Str);
+    if (!InSize)
+      break;
+    res = iconv (Converter, &Str, &InSize, &OutBuf, &OutSize);
+    if (res == (size_t) -1)
+    {
+      // If char was not convertible then it will be substituted with char c
+      *(wchar_t *)(OutBuf) = c;
+      OutBuf += 2;
+    }
+    CurrentIndex++;
+    Indexation[CurrentIndex] = Str - OriginalStr;
+  }
+  *(wchar_t *) OutBuf = L'\0';
+  iconv_close (Converter);
 }
 
 // In case source is in utf-8
@@ -156,6 +190,7 @@ void SetStringSUtf8 (char *&Target, const char *Str)
       break;
     PrevOutSize = OutSize;
     res = iconv (Converter, &Str, &InSize, &OutBuf, &OutSize);
+
     if (PrevOutSize - OutSize > 1)
     {
       // If char is multichar then we count it as not converted
@@ -166,11 +201,6 @@ void SetStringSUtf8 (char *&Target, const char *Str)
   }
   *(OutBuf) = 0;
   iconv_close (Converter);
-
-  if (res == (size_t)(-1))
-  {
-    *Target = '\0';
-  }
 }
 
 // In case destination is in utf-8

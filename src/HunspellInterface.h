@@ -37,10 +37,12 @@ typedef std::set <char *, bool (*)(char *, char *)> SortedWordSet;
 struct DicInfo
 {
   Hunspell *Speller;
-  iconv_t Converter;
-  iconv_t BackConverter;
+  iconv_t ConverterUTF8;
+  iconv_t BackConverterUTF8;
   iconv_t ConverterANSI;
   iconv_t BackConverterANSI;
+  iconv_t ConverterWCHAR;
+  iconv_t BackConverterWCHAR;
   TCHAR *LocalDicPath;
   WordSet *LocalDic; // Stored in Dictionary encoding
 };
@@ -90,6 +92,7 @@ private:
   std::set <AvailableLangInfo> *DicList;
   std::map <TCHAR *, DicInfo, bool (*)(TCHAR *, TCHAR *)> *AllHunspells;
   char *GetConvertedWord (const char *Source, iconv_t Converter);
+  char *GetConvertedWord (const wchar_t *Source, iconv_t Converter);
   DicInfo SingularSpeller;
   DicInfo LastSelectedSpeller;
   DicInfo Empty;

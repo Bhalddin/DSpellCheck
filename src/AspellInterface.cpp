@@ -52,10 +52,10 @@ std::vector<TCHAR *> *AspellInterface::GetLanguageList ()
 {
   if (!AspellLoaded)
     return 0;
-  AspellConfig* aspCfg;
-  const AspellDictInfo* entry;
-  AspellDictInfoList* dlist;
-  AspellDictInfoEnumeration* dels;
+  AspellConfig *aspCfg;
+  const AspellDictInfo *entry;
+  AspellDictInfoList *dlist;
+  AspellDictInfoEnumeration *dels;
   std::vector<TCHAR *> *Names = new std::vector<TCHAR *>;
 
   aspCfg = new_aspell_config();
@@ -104,7 +104,7 @@ void AspellInterface::SetMultipleLanguages (std::vector<TCHAR *> *List)
     SetString (Buf, List->at (i));
     aspell_config_replace(spell_config, "lang", Buf);
     CLEAN_AND_ZERO_ARR (Buf);
-    AspellCanHaveError * possible_err = new_aspell_speller(spell_config);
+    AspellCanHaveError *possible_err = new_aspell_speller(spell_config);
     if (aspell_error_number(possible_err) == 0)
     {
       Spellers->push_back (to_aspell_speller(possible_err));
@@ -115,7 +115,7 @@ void AspellInterface::SetMultipleLanguages (std::vector<TCHAR *> *List)
 
 static void FilleVectorFromAspellWordList (const AspellWordList *WordList, std::vector<char *> *TargetVector)
 {
-  AspellStringEnumeration * els = aspell_word_list_elements(WordList);
+  AspellStringEnumeration *els = aspell_word_list_elements(WordList);
   const char *Suggestion;
   while ((Suggestion = aspell_string_enumeration_next(els)) != 0)
   {
@@ -131,10 +131,20 @@ std::vector<char *> *AspellInterface::GetSuggestions (char *Word)
 
   char *TargetWord = 0;
 
-  if (CurrentEncoding == ENCODING_UTF8)
+  switch (CurrentEncoding)
+  {
+  case ENCODING_UTF8:
     TargetWord = Word;
-  else
+    break;
+  case ENCODING_ANSI:
     SetStringDUtf8 (TargetWord, Word);
+    break;
+  case ENCODING_WCHAR:
+    SetStringDUtf8 (TargetWord, (wchar_t *) Word);
+    break;
+  }
+
+
 
   std::vector<char *> *SuggList = new std::vector<char *>;
   if (!MultiMode)
@@ -152,7 +162,7 @@ std::vector<char *> *AspellInterface::GetSuggestions (char *Word)
     {
       CurWordList = aspell_speller_suggest (Spellers->at (i), TargetWord, -1);
 
-      AspellStringEnumeration * els = aspell_word_list_elements(CurWordList);
+      AspellStringEnumeration *els = aspell_word_list_elements(CurWordList);
 
       FilleVectorFromAspellWordList (CurWordList, SuggList);
     }
@@ -163,8 +173,17 @@ std::vector<char *> *AspellInterface::GetSuggestions (char *Word)
   TCHAR *Buf = 0;
   int Counter = 0;
 
-  if (CurrentEncoding == ENCODING_ANSI)
+  switch (CurrentEncoding)
+  {
+  case ENCODING_UTF8:
+    break;
+  case ENCODING_ANSI:
     CLEAN_AND_ZERO_ARR (TargetWord);
+    break;
+  case ENCODING_WCHAR:
+    CLEAN_AND_ZERO_ARR (TargetWord);
+    break;
+  }
 
   return SuggList;
 }
@@ -173,10 +192,18 @@ void AspellInterface::AddToDictionary (char *Word)
 {
   char *TargetWord = 0;
 
-  if (CurrentEncoding == ENCODING_UTF8)
+  switch (CurrentEncoding)
+  {
+  case ENCODING_UTF8:
     TargetWord = Word;
-  else
+    break;
+  case ENCODING_ANSI:
     SetStringDUtf8 (TargetWord, Word);
+    break;
+  case ENCODING_WCHAR:
+    SetStringDUtf8 (TargetWord, (wchar_t *) Word);
+    break;
+  }
 
   if (!LastSelectedSpeller)
     return;
@@ -191,8 +218,17 @@ void AspellInterface::AddToDictionary (char *Word)
   }
   LastSelectedSpeller = 0;
 
-  if (CurrentEncoding == ENCODING_ANSI)
+  switch (CurrentEncoding)
+  {
+  case ENCODING_UTF8:
+    break;
+  case ENCODING_ANSI:
     CLEAN_AND_ZERO_ARR (TargetWord);
+    break;
+  case ENCODING_WCHAR:
+    CLEAN_AND_ZERO_ARR (TargetWord);
+    break;
+  }
 }
 
 void AspellInterface::IgnoreAll (char *Word)
@@ -202,10 +238,18 @@ void AspellInterface::IgnoreAll (char *Word)
 
   char *TargetWord = 0;
 
-  if (CurrentEncoding == ENCODING_UTF8)
+  switch (CurrentEncoding)
+  {
+  case ENCODING_UTF8:
     TargetWord = Word;
-  else
+    break;
+  case ENCODING_ANSI:
     SetStringDUtf8 (TargetWord, Word);
+    break;
+  case ENCODING_WCHAR:
+    SetStringDUtf8 (TargetWord, (wchar_t *) Word);
+    break;
+  }
 
   aspell_speller_add_to_session (LastSelectedSpeller, TargetWord, strlen (TargetWord) + 1);
   aspell_speller_save_all_word_lists (LastSelectedSpeller);
@@ -214,8 +258,17 @@ void AspellInterface::IgnoreAll (char *Word)
     AspellErrorMsgBox (0, aspell_speller_error_message (LastSelectedSpeller));
   }
   LastSelectedSpeller = 0;
-  if (CurrentEncoding == ENCODING_ANSI)
+  switch (CurrentEncoding)
+  {
+  case ENCODING_UTF8:
+    break;
+  case ENCODING_ANSI:
     CLEAN_AND_ZERO_ARR (TargetWord);
+    break;
+  case ENCODING_WCHAR:
+    CLEAN_AND_ZERO_ARR (TargetWord);
+    break;
+  }
 }
 
 BOOL AspellInterface::CheckWord (char *Word)
@@ -225,10 +278,18 @@ BOOL AspellInterface::CheckWord (char *Word)
 
   char *DstWord = 0;
   BOOL res = FALSE;
-  if (CurrentEncoding == ENCODING_UTF8)
+    switch (CurrentEncoding)
+  {
+  case ENCODING_UTF8:
     DstWord = Word;
-  else
+    break;
+  case ENCODING_ANSI:
     SetStringDUtf8 (DstWord, Word);
+    break;
+  case ENCODING_WCHAR:
+    SetStringDUtf8 (DstWord, (wchar_t *) Word);
+    break;
+  }
 
   unsigned int Len = strlen (DstWord);
   if (!MultiMode)
@@ -248,9 +309,17 @@ BOOL AspellInterface::CheckWord (char *Word)
       res = res || aspell_speller_check(Spellers->at (i), DstWord, Len);
     }
   }
-  if (CurrentEncoding != ENCODING_UTF8)
+  switch (CurrentEncoding)
+  {
+  case ENCODING_UTF8:
+    break;
+  case ENCODING_ANSI:
     CLEAN_AND_ZERO_ARR (DstWord);
-
+    break;
+  case ENCODING_WCHAR:
+    CLEAN_AND_ZERO_ARR (DstWord);
+    break;
+  }
   return res;
 }
 
@@ -276,12 +345,12 @@ void AspellInterface::SetLanguage (TCHAR *Lang)
     SingularSpeller = 0;
   }
 
-  AspellCanHaveError * possible_err = new_aspell_speller (spell_config);
+  AspellCanHaveError *possible_err = new_aspell_speller (spell_config);
 
   if (aspell_error_number(possible_err) != 0)
   {
     delete_aspell_config (spell_config);
-    std::vector<TCHAR*> *LangList = GetLanguageList ();
+    std::vector<TCHAR *> *LangList = GetLanguageList ();
     if (LangList && (!Lang || _tcscmp (Lang, LangList->at (0)) != 0))
     {
       SetLanguage (LangList->at (0));

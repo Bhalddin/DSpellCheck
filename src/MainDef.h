@@ -32,7 +32,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 enum EncodingType
 {
   ENCODING_UTF8 = 0,
-  ENCODING_ANSI
+  ENCODING_ANSI,
+  ENCODING_WCHAR // Experimental - to substite crude work with UTF-8
 };
 
 namespace CustomGUIMessage

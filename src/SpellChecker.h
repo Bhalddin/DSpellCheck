@@ -154,7 +154,7 @@ private:
   void GetVisibleLimits(long &Start, long &Finish);
   char *GetVisibleText(long *offset, BOOL NotIntersectionOnly = FALSE);
   char *GetDocumentText ();
-  BOOL CheckText (char *TextToCheck, long offset, CheckTextMode Mode);
+  BOOL CheckText (char *InputText, long offset, CheckTextMode Mode);
   void CheckVisible (BOOL NotIntersectionOnly = FALSE);
   void setEncodingById (int EncId);
   void SaveSettings ();
@@ -182,7 +182,7 @@ private:
   void PreserveCurrentAddressIndex ();
   void FillDownloadDics ();
   void ResetHotSpotCache ();
-  void CheckSpecialDelimeters (char *&Word, const char *TextStart, long &WordStart, long &WordEnd);
+  void CheckSpecialDelimeters (char *&Word, long &WordStart, long &WordEnd);
 
   void SaveToIni (const TCHAR *Name, const TCHAR *Value, const TCHAR * DefaultValue, BOOL InQuotes = 0);
   void SaveToIni (const TCHAR *Name, int Value, int DefaultValue);
@@ -211,6 +211,7 @@ private:
   char *DelimUtf8; // String without special characters but maybe with escape characters (like '\n' and stuff)
   char *DelimUtf8Converted; // String where escape characters are properly converted to corresponding symbols
   char *DelimConverted; // Same but in ANSI encoding
+  wchar_t *DelimConvertedWchar; // Same buf for wchar encoding
   TCHAR *ServerNames[3]; // Only user ones, there'll also be bunch of predetermined ones
   TCHAR *DefaultServers[3];
   int LastUsedAddress; // equals USER_SERVER_CONST + num if user address is used, otherwise equals number of default server
@@ -268,7 +269,6 @@ private:
   Suggestions *SuggestionsInstance;
   LangList *LangListInstance;
   char *VisibleText;
-  int VisibleTextLength;
   long VisibleTextOffset;
   BOOL RemoveUserDics;
   BOOL RemoveSystem;

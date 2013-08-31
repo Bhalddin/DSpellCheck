@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <io.h>
 #include <fcntl.h>
 
-static BOOL ListFiles(TCHAR *path, TCHAR *mask, std::vector<TCHAR *>& files, TCHAR *Filter)
+static BOOL ListFiles(TCHAR *path, TCHAR *mask, std::vector<TCHAR *> &files, TCHAR *Filter)
 {
   HANDLE hFind = INVALID_HANDLE_VALUE;
   WIN32_FIND_DATA ffd;
@@ -41,7 +41,8 @@ static BOOL ListFiles(TCHAR *path, TCHAR *mask, std::vector<TCHAR *>& files, TCH
   directories->push(path);
   files.clear();
 
-  while (!directories->empty()) {
+  while (!directories->empty())
+  {
     path = directories->top();
     CLEAN_AND_ZERO_ARR (spec);
     spec = new TCHAR [_tcslen (path) + 1 + _tcslen (mask) + 1];
@@ -51,31 +52,38 @@ static BOOL ListFiles(TCHAR *path, TCHAR *mask, std::vector<TCHAR *>& files, TCH
     directories->pop();
 
     hFind = FindFirstFile(spec, &ffd);
-    if (hFind == INVALID_HANDLE_VALUE)  {
+    if (hFind == INVALID_HANDLE_VALUE)
+    {
       Result = FALSE;
       goto cleanup;
     }
 
-    do {
+    do
+    {
       if (wcscmp(ffd.cFileName, L".") != 0 &&
-        wcscmp(ffd.cFileName, L"..") != 0) {
-          TCHAR *buf = new TCHAR [_tcslen (path) + 1 + _tcslen (ffd.cFileName) + 1];
-          _tcscpy (buf, path );
-          _tcscat (buf, _T ("\\"));
-          _tcscat (buf, ffd.cFileName);
-          if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-            directories->push(buf);
-          }
-          else {
-            if (PathMatchSpec (buf, Filter))
-              files.push_back(buf);
-            else
-              CLEAN_AND_ZERO_ARR (buf);
-          }
+          wcscmp(ffd.cFileName, L"..") != 0)
+      {
+        TCHAR *buf = new TCHAR [_tcslen (path) + 1 + _tcslen (ffd.cFileName) + 1];
+        _tcscpy (buf, path );
+        _tcscat (buf, _T ("\\"));
+        _tcscat (buf, ffd.cFileName);
+        if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        {
+          directories->push(buf);
+        }
+        else
+        {
+          if (PathMatchSpec (buf, Filter))
+            files.push_back(buf);
+          else
+            CLEAN_AND_ZERO_ARR (buf);
+        }
       }
-    } while (FindNextFile(hFind, &ffd) != 0);
+    }
+    while (FindNextFile(hFind, &ffd) != 0);
 
-    if (GetLastError() != ERROR_NO_MORE_FILES) {
+    if (GetLastError() != ERROR_NO_MORE_FILES)
+    {
       FindClose(hFind);
       goto cleanup;
       Result = FALSE;
@@ -104,7 +112,7 @@ HunspellInterface::HunspellInterface (HWND NppWindowArg)
   DicDir = 0;
   SysDicDir = 0;
   LastSelectedSpeller = Empty;
-  AllHunspells = new std::map <TCHAR *, DicInfo, bool (*)(TCHAR *, TCHAR *)> (SortCompare);
+  AllHunspells = new std::map <TCHAR *, DicInfo, bool ( *)(TCHAR *, TCHAR *)> (SortCompare);
   IsHunspellWorking = FALSE;
   TemporaryBuffer = new char[DEFAULT_BUF_SIZE];
   UserDicPath = 0;
@@ -113,7 +121,7 @@ HunspellInterface::HunspellInterface (HWND NppWindowArg)
 
 void HunspellInterface::UpdateOnDicRemoval (TCHAR *Path, BOOL &NeedSingleLangReset, BOOL &NeedMultiLangReset)
 {
-  std::map <TCHAR *, DicInfo, bool (*)(TCHAR *, TCHAR *)>::iterator it = AllHunspells->find (Path);
+  std::map <TCHAR *, DicInfo, bool ( *)(TCHAR *, TCHAR *)>::iterator it = AllHunspells->find (Path);
   NeedSingleLangReset = FALSE;
   NeedMultiLangReset = FALSE;
   if (it != AllHunspells->end ())
@@ -134,17 +142,23 @@ void HunspellInterface::UpdateOnDicRemoval (TCHAR *Path, BOOL &NeedSingleLangRes
     CLEAN_AND_ZERO ((*it).second.Speller);
     WriteUserDic ((*it).second.LocalDic, (*it).second.LocalDicPath);
     CLEAN_AND_ZERO ((*it).second.LocalDicPath);
-    if ((*it).second.Converter != (iconv_t) -1)
-      iconv_close ((*it).second.Converter);
+    if ((*it).second.ConverterUTF8 != (iconv_t) - 1)
+      iconv_close ((*it).second.ConverterUTF8);
 
-    if ((*it).second.BackConverter != (iconv_t) -1)
-      iconv_close ((*it).second.BackConverter);
+    if ((*it).second.BackConverterUTF8 != (iconv_t) - 1)
+      iconv_close ((*it).second.BackConverterUTF8);
 
-    if ((*it).second.ConverterANSI != (iconv_t) -1)
+    if ((*it).second.ConverterANSI != (iconv_t) - 1)
       iconv_close ((*it).second.ConverterANSI);
 
-    if ((*it).second.BackConverterANSI != (iconv_t) -1)
+    if ((*it).second.BackConverterANSI != (iconv_t) - 1)
       iconv_close ((*it).second.BackConverterANSI);
+
+    if ((*it).second.ConverterWCHAR != (iconv_t) - 1)
+      iconv_close ((*it).second.ConverterWCHAR);
+
+    if ((*it).second.BackConverterWCHAR != (iconv_t) - 1)
+      iconv_close ((*it).second.BackConverterWCHAR);
 
     CLEAN_AND_ZERO ((*it).second.LocalDic);
     CLEAN_AND_ZERO ((*it).second.LocalDicPath);
@@ -169,31 +183,31 @@ void HunspellInterface::SetUseOneDic (BOOL Value)
 
 BOOL ArePathsEqual (TCHAR *path1, TCHAR *path2)
 {
-  BY_HANDLE_FILE_INFORMATION bhfi1,bhfi2;
+  BY_HANDLE_FILE_INFORMATION bhfi1, bhfi2;
   HANDLE h1, h2 = NULL;
   DWORD access = 0;
   DWORD share = FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE;
 
-  h1 = CreateFile(path1,access,share,NULL,OPEN_EXISTING,(GetFileAttributes(path1)&FILE_ATTRIBUTE_DIRECTORY)?FILE_FLAG_BACKUP_SEMANTICS:0,NULL);
+  h1 = CreateFile(path1, access, share, NULL, OPEN_EXISTING, (GetFileAttributes(path1)&FILE_ATTRIBUTE_DIRECTORY) ? FILE_FLAG_BACKUP_SEMANTICS : 0, NULL);
   if (INVALID_HANDLE_VALUE != h1)
   {
-    if (!GetFileInformationByHandle(h1,&bhfi1)) bhfi1.dwVolumeSerialNumber = 0;
-    h2 = CreateFile(path2,access,share,NULL,OPEN_EXISTING,(GetFileAttributes(path2)&FILE_ATTRIBUTE_DIRECTORY)?FILE_FLAG_BACKUP_SEMANTICS:0,NULL);
-    if (!GetFileInformationByHandle(h2,&bhfi2)) bhfi2.dwVolumeSerialNumber = bhfi1.dwVolumeSerialNumber + 1;
+    if (!GetFileInformationByHandle(h1, &bhfi1)) bhfi1.dwVolumeSerialNumber = 0;
+    h2 = CreateFile(path2, access, share, NULL, OPEN_EXISTING, (GetFileAttributes(path2)&FILE_ATTRIBUTE_DIRECTORY) ? FILE_FLAG_BACKUP_SEMANTICS : 0, NULL);
+    if (!GetFileInformationByHandle(h2, &bhfi2)) bhfi2.dwVolumeSerialNumber = bhfi1.dwVolumeSerialNumber + 1;
   }
   CloseHandle(h1);
   CloseHandle(h2);
   return INVALID_HANDLE_VALUE != h1 && INVALID_HANDLE_VALUE != h2
-    && bhfi1.dwVolumeSerialNumber==bhfi2.dwVolumeSerialNumber
-    && bhfi1.nFileIndexHigh==bhfi2.nFileIndexHigh
-    && bhfi1.nFileIndexLow==bhfi2.nFileIndexLow ;
+         && bhfi1.dwVolumeSerialNumber == bhfi2.dwVolumeSerialNumber
+         && bhfi1.nFileIndexHigh == bhfi2.nFileIndexHigh
+         && bhfi1.nFileIndexLow == bhfi2.nFileIndexLow ;
 }
 
 HunspellInterface::~HunspellInterface ()
 {
   IsHunspellWorking = FALSE;
   {
-    std::map <TCHAR *, DicInfo, bool (*)(TCHAR *, TCHAR *)>::iterator it = AllHunspells->begin ();
+    std::map <TCHAR *, DicInfo, bool ( *)(TCHAR *, TCHAR *)>::iterator it = AllHunspells->begin ();
     for (; it != AllHunspells->end (); ++it)
     {
       delete []((*it).first);
@@ -205,17 +219,23 @@ HunspellInterface::~HunspellInterface ()
 
       CLEAN_AND_ZERO ((*it).second.LocalDic);
       CLEAN_AND_ZERO ((*it).second.LocalDicPath);
-      if ((*it).second.Converter != (iconv_t) -1)
-        iconv_close ((*it).second.Converter);
+      if ((*it).second.ConverterUTF8 != (iconv_t) - 1)
+        iconv_close ((*it).second.ConverterUTF8);
 
-      if ((*it).second.BackConverter != (iconv_t) -1)
-        iconv_close ((*it).second.BackConverter);
+      if ((*it).second.BackConverterUTF8 != (iconv_t) - 1)
+        iconv_close ((*it).second.BackConverterUTF8);
 
-      if ((*it).second.ConverterANSI != (iconv_t) -1)
+      if ((*it).second.ConverterANSI != (iconv_t) - 1)
         iconv_close ((*it).second.ConverterANSI);
 
-      if ((*it).second.BackConverterANSI != (iconv_t) -1)
+      if ((*it).second.BackConverterANSI != (iconv_t) - 1)
         iconv_close ((*it).second.BackConverterANSI);
+
+      if ((*it).second.ConverterWCHAR != (iconv_t) - 1)
+        iconv_close ((*it).second.ConverterWCHAR);
+
+      if ((*it).second.BackConverterWCHAR != (iconv_t) - 1)
+        iconv_close ((*it).second.BackConverterWCHAR);
     }
     CLEAN_AND_ZERO (AllHunspells);
   }
@@ -248,7 +268,7 @@ HunspellInterface::~HunspellInterface ()
   CLEAN_AND_ZERO (DicList);
 }
 
-std::vector<TCHAR*> *HunspellInterface::GetLanguageList ()
+std::vector<TCHAR *> *HunspellInterface::GetLanguageList ()
 {
   std::vector<TCHAR *> *List = new std::vector<TCHAR *>;
   // Just copying vector
@@ -272,7 +292,7 @@ DicInfo HunspellInterface::CreateHunspell (TCHAR *Name, int Type)
   _tcscat (AffBuf, _T ("\\"));
   _tcscat (AffBuf, Name);
   {
-    std::map <TCHAR *, DicInfo, bool (*)(TCHAR *, TCHAR *)>::iterator it = AllHunspells->find (AffBuf);
+    std::map <TCHAR *, DicInfo, bool ( *)(TCHAR *, TCHAR *)>::iterator it = AllHunspells->find (AffBuf);
     if (it != AllHunspells->end ())
     {
       CLEAN_AND_ZERO_ARR (AffBuf);
@@ -296,10 +316,12 @@ DicInfo HunspellInterface::CreateHunspell (TCHAR *Name, int Type)
   char *DicEnconding = NewHunspell->get_dic_encoding ();
   if (stricmp (DicEnconding, "Microsoft-cp1251") == 0)
     DicEnconding = "cp1251"; // Queer fix for encoding which isn't being guessed correctly by libiconv TODO: Find other possible such failures
-  NewDic.Converter = iconv_open (DicEnconding, "UTF-8");
-  NewDic.BackConverter = iconv_open ("UTF-8", DicEnconding);
+  NewDic.ConverterUTF8 = iconv_open (DicEnconding, "UTF-8");
+  NewDic.BackConverterUTF8 = iconv_open ("UTF-8", DicEnconding);
   NewDic.ConverterANSI = iconv_open (DicEnconding, "");
   NewDic.BackConverterANSI = iconv_open ("", DicEnconding);
+  NewDic.ConverterWCHAR = iconv_open (DicEnconding, "UCS-2LE");
+  NewDic.BackConverterWCHAR = iconv_open ("UCS-2LE", DicEnconding);
   NewDic.LocalDic = new WordSet ();
   NewDic.LocalDicPath = new TCHAR [_tcslen (DicDir) + 1 + _tcslen (Name) + 1 + 3 + 1]; // Local Dic path always points to non-system directory
   NewDic.LocalDicPath[0] = '\0';
@@ -314,7 +336,7 @@ DicInfo HunspellInterface::CreateHunspell (TCHAR *Name, int Type)
     WordSet::iterator it = Memorized->begin ();
     for (; it != Memorized->end (); ++it)
     {
-      char *ConvWord = GetConvertedWord (*it, NewDic.Converter);
+      char *ConvWord = GetConvertedWord (*it, NewDic.ConverterUTF8);
       if (*ConvWord)
         NewHunspell->add (ConvWord); // Adding all already memorized words to newly loaded Hunspell instance
     }
@@ -390,9 +412,39 @@ char *HunspellInterface::GetConvertedWord (const char *Source, iconv_t Converter
   return TemporaryBuffer;
 }
 
+char *HunspellInterface::GetConvertedWord (const wchar_t *Source, iconv_t Converter)
+{
+  if (Converter == iconv_t (-1))
+  {
+    *TemporaryBuffer = '\0';
+    return TemporaryBuffer;
+  }
+  size_t InSize = wcslen (Source) * 2 + 2;
+  size_t OutSize = DEFAULT_BUF_SIZE;
+  char *OutBuf = TemporaryBuffer;
+  size_t res = iconv (Converter, (const char **) &Source, &InSize, &OutBuf, &OutSize);
+  if (res == (size_t)(-1))
+  {
+    *TemporaryBuffer = '\0';
+  }
+  return TemporaryBuffer;
+}
+
 BOOL HunspellInterface::SpellerCheckWord (DicInfo Dic, char *Word, EncodingType Encoding)
 {
-  char *WordToCheck = GetConvertedWord (Word, Encoding == (ENCODING_UTF8) ? Dic.Converter : Dic.ConverterANSI);
+  char *WordToCheck = 0;
+  switch (Encoding)
+  {
+  case ENCODING_UTF8:
+    WordToCheck = GetConvertedWord (Word, Dic.ConverterUTF8);
+    break;
+  case ENCODING_ANSI:
+    WordToCheck = GetConvertedWord (Word, Dic.ConverterANSI);
+    break;
+  case ENCODING_WCHAR:
+    WordToCheck = GetConvertedWord ((wchar_t *) Word, Dic.ConverterWCHAR);
+    break;
+  }
   if (!*WordToCheck)
     return FALSE;
 
@@ -564,19 +616,27 @@ void HunspellInterface::AddToDictionary (char *Word)
   }
 
   char *Buf = 0;
-  if (CurrentEncoding == ENCODING_UTF8)
-    SetString (Buf, Word);
-  else
+  switch (CurrentEncoding)
+  {
+  case ENCODING_ANSI:
     SetStringDUtf8 (Buf, Word);
+    break;
+  case ENCODING_UTF8:
+    SetString (Buf, Word);
+    break;
+  case ENCODING_WCHAR:
+    SetStringDUtf8 (Buf, (wchar_t *) Word);
+    break;
+  }
 
   if (UseOneDic)
   {
-    std::map <TCHAR *, DicInfo, bool (*)(TCHAR *, TCHAR *)>::iterator it;
+    std::map <TCHAR *, DicInfo, bool ( *)(TCHAR *, TCHAR *)>::iterator it;
     Memorized->insert (Buf);
     it = AllHunspells->begin ();
     for (; it != AllHunspells->end (); ++it)
     {
-      char *ConvWord = GetConvertedWord (Buf, (*it).second.Converter);
+      char *ConvWord = GetConvertedWord (Buf, (*it).second.ConverterUTF8);
       if (*ConvWord)
         (*it).second.Speller->add (ConvWord);
       else if ((*it).second.Speller == LastSelectedSpeller.Speller)
@@ -586,7 +646,7 @@ void HunspellInterface::AddToDictionary (char *Word)
   }
   else
   {
-    char *ConvWord = GetConvertedWord (Buf, LastSelectedSpeller.Converter);
+    char *ConvWord = GetConvertedWord (Buf, LastSelectedSpeller.ConverterUTF8);
     char *WordCopy = 0;
     SetString (WordCopy, ConvWord);
     LastSelectedSpeller.LocalDic->insert (WordCopy);
@@ -619,7 +679,19 @@ std::vector<char *> *HunspellInterface::GetSuggestions (char *Word)
 
   if (!MultiMode)
   {
-    Num = SingularSpeller.Speller->suggest (&HunspellList, GetConvertedWord (Word, (CurrentEncoding == ENCODING_UTF8) ? SingularSpeller.Converter : SingularSpeller.ConverterANSI));
+    switch (CurrentEncoding)
+    {
+    case ENCODING_UTF8:
+      Num = SingularSpeller.Speller->suggest (&HunspellList, GetConvertedWord (Word, SingularSpeller.ConverterUTF8));
+      break;
+    case ENCODING_ANSI:
+      Num = SingularSpeller.Speller->suggest (&HunspellList, GetConvertedWord (Word, SingularSpeller.ConverterANSI));
+      break;
+    case ENCODING_WCHAR:
+      Num = SingularSpeller.Speller->suggest (&HunspellList, GetConvertedWord ((wchar_t *) Word, SingularSpeller.ConverterWCHAR));
+      break;
+    }
+
   }
   else
   {
@@ -628,7 +700,18 @@ std::vector<char *> *HunspellInterface::GetSuggestions (char *Word)
     CurHunspellList = 0;
     for (int i = 0; i < (int) Spellers->size (); i++)
     {
-      CurNum = Spellers->at (i).Speller->suggest (&CurHunspellList, GetConvertedWord (Word, (CurrentEncoding == ENCODING_UTF8) ? Spellers->at (i).Converter : Spellers->at (i).ConverterANSI));
+      switch (CurrentEncoding)
+      {
+      case ENCODING_UTF8:
+        CurNum = Spellers->at (i).Speller->suggest (&CurHunspellList, GetConvertedWord (Word, Spellers->at (i).ConverterUTF8));
+        break;
+      case ENCODING_ANSI:
+        CurNum = Spellers->at (i).Speller->suggest (&CurHunspellList, GetConvertedWord (Word, Spellers->at (i).ConverterANSI));
+        break;
+      case ENCODING_WCHAR:
+        CurNum = Spellers->at (i).Speller->suggest (&CurHunspellList, GetConvertedWord ((wchar_t *) Word, Spellers->at (i).ConverterWCHAR));
+        break;
+      }
 
       if (CurNum > MaxSize)
       {
@@ -653,7 +736,7 @@ std::vector<char *> *HunspellInterface::GetSuggestions (char *Word)
   for (int i = 0; i < Num; i++)
   {
     char *Buf = 0;
-    SetString (Buf, GetConvertedWord (HunspellList[i], LastSelectedSpeller.BackConverter));
+    SetString (Buf, GetConvertedWord (HunspellList[i], LastSelectedSpeller.BackConverterUTF8));
     SuggList->push_back (Buf);
   }
 

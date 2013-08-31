@@ -57,7 +57,7 @@ SpellChecker::SpellChecker (const TCHAR *IniFilePathArg, SettingsDlg *SettingsDl
   HunspellMultiLanguages = 0;
   VisibleText = 0;
   DelimConverted = 0;
-  VisibleTextLength = -1;
+  DelimConvertedWchar = 0;
   SetString (IniFilePath, IniFilePathArg);
   SettingsDlgInstance = SettingsDlgInstanceArg;
   SuggestionsInstance = SuggestionsInstanceArg;
@@ -101,7 +101,7 @@ SpellChecker::SpellChecker (const TCHAR *IniFilePathArg, SettingsDlg *SettingsDl
   ProxyPort = 0;
   SettingsLoaded = FALSE;
   UseProxy = FALSE;
-  SettingsToSave = new std::map<TCHAR *, DWORD, bool (*)(TCHAR *, TCHAR *)> (SortCompare);
+  SettingsToSave = new std::map<TCHAR *, DWORD, bool ( *)(TCHAR *, TCHAR *)> (SortCompare);
   if (SendMsgToNpp (NppDataInstance, NPPM_ALLOCATESUPPORTED, 0, 0))
   {
     SetUseAllocatedIds (TRUE);
@@ -117,6 +117,13 @@ static const char Ye[] = "\xd0\x95";
 static const char yo[] = "\xd1\x91";
 static const char ye[] = "\xd0\xb5";
 static const char PunctuationApostrophe[] = "\xe2\x80\x99";
+
+static const wchar_t YoWCHAR[] = L"\u0401";
+static const wchar_t YeWCHAR[] = L"\u0415";
+static const wchar_t yoWCHAR[] = L"\u0451";
+static const wchar_t yeWCHAR[] = L"\u0435";
+static const wchar_t PunctuationApostropheWCHAR[] = L"\u2019";
+
 
 void SpellChecker::PrepareStringForConversion ()
 {
@@ -141,7 +148,7 @@ void SpellChecker::PrepareStringForConversion ()
     *OutString[i] = OutBuf;
     Res = iconv (Conv, &InBuf, &InSize, &OutBuf, &OutSize);
     CLEAN_AND_ZERO_ARR (Buf);
-    if (Res == (size_t) -1)
+    if (Res == (size_t) - 1)
     {
       CLEAN_AND_ZERO_ARR (*OutString[i]);
     }
@@ -156,6 +163,7 @@ SpellChecker::~SpellChecker ()
   CLEAN_AND_ZERO (HunspellSpeller);
   CLEAN_AND_ZERO_ARR (SelectedWord);
   CLEAN_AND_ZERO_ARR (DelimConverted);
+  CLEAN_AND_ZERO_ARR (DelimConvertedWchar);
   CLEAN_AND_ZERO_ARR (DelimUtf8Converted);
   CLEAN_AND_ZERO_ARR (DelimUtf8);
   CLEAN_AND_ZERO_ARR (AspellLanguage);
@@ -182,7 +190,7 @@ SpellChecker::~SpellChecker ()
   for (int i = 0; i < countof (DefaultServers); i++)
     CLEAN_AND_ZERO_ARR (DefaultServers[i]);
 
-  std::map<TCHAR *, DWORD, bool (*)(TCHAR *, TCHAR *)>::iterator it = SettingsToSave->begin ();
+  std::map<TCHAR *, DWORD, bool ( *)(TCHAR *, TCHAR *)>::iterator it = SettingsToSave->begin ();
   for (; it != SettingsToSave->end (); ++it)
   {
     delete ((*it).first);
@@ -338,8 +346,8 @@ void SpellChecker::ReinitLanguageLists ()
   TCHAR *CurrentLang;
 
   AbstractSpellerInterface *SpellerToUse = (SpellerId == 1 ?
-    (AbstractSpellerInterface *)HunspellSpeller :
-  (AbstractSpellerInterface *)AspellSpeller);
+                                            (AbstractSpellerInterface *)HunspellSpeller :
+                                            (AbstractSpellerInterface *)AspellSpeller);
 
   if (SpellerId == 0)
   {
@@ -385,9 +393,9 @@ void SpellChecker::ReinitLanguageLists ()
       RecheckVisibleBothViews ();
     }
     SettingsDlgInstance->GetSimpleDlg ()->AddAvailableLanguages (CurrentLangs,
-      SpellerId == 1 ? HunspellLanguage : AspellLanguage,
-      SpellerId == 1 ? HunspellMultiLanguages : AspellMultiLanguages,
-      SpellerId == 1 ? HunspellSpeller : 0);
+                                                                 SpellerId == 1 ? HunspellLanguage : AspellLanguage,
+                                                                 SpellerId == 1 ? HunspellMultiLanguages : AspellMultiLanguages,
+                                                                 SpellerId == 1 ? HunspellSpeller : 0);
   }
   else
   {
@@ -658,17 +666,17 @@ void SpellChecker::DoPluginMenuInclusion (BOOL Invalidate)
             return;
         }
         int Checked = (_tcscmp (CurLang, _T ("<MULTIPLE>")) == 0) ? (MFT_RADIOCHECK | MF_CHECKED)  : MF_UNCHECKED;
-        Res = AppendMenu (NewMenu, MF_STRING | Checked, GetUseAllocatedIds () ? MULTIPLE_LANGS + GetLangsMenuIdStart () :MAKEWORD (MULTIPLE_LANGS, LANGUAGE_MENU_ID), _T ("Multiple Languages"));
+        Res = AppendMenu (NewMenu, MF_STRING | Checked, GetUseAllocatedIds () ? MULTIPLE_LANGS + GetLangsMenuIdStart () : MAKEWORD (MULTIPLE_LANGS, LANGUAGE_MENU_ID), _T ("Multiple Languages"));
         Res = AppendMenu (NewMenu, MF_SEPARATOR, -1, 0);
-        Res = AppendMenu (NewMenu, MF_STRING, GetUseAllocatedIds () ? CUSTOMIZE_MULTIPLE_DICS + GetLangsMenuIdStart () :MAKEWORD (CUSTOMIZE_MULTIPLE_DICS, LANGUAGE_MENU_ID), _T ("Set Multiple Languages..."));
+        Res = AppendMenu (NewMenu, MF_STRING, GetUseAllocatedIds () ? CUSTOMIZE_MULTIPLE_DICS + GetLangsMenuIdStart () : MAKEWORD (CUSTOMIZE_MULTIPLE_DICS, LANGUAGE_MENU_ID), _T ("Set Multiple Languages..."));
         if (LibMode == 1) // Only Hunspell supported
         {
-          Res = AppendMenu (NewMenu, MF_STRING , GetUseAllocatedIds () ? DOWNLOAD_DICS + GetLangsMenuIdStart () :MAKEWORD (DOWNLOAD_DICS, LANGUAGE_MENU_ID), _T ("Download More Languages..."));
-          Res = AppendMenu (NewMenu, MF_STRING , GetUseAllocatedIds () ? REMOVE_DICS + GetLangsMenuIdStart () :MAKEWORD (REMOVE_DICS, LANGUAGE_MENU_ID), _T ("Remove Unneeded Languages..."));
+          Res = AppendMenu (NewMenu, MF_STRING , GetUseAllocatedIds () ? DOWNLOAD_DICS + GetLangsMenuIdStart () : MAKEWORD (DOWNLOAD_DICS, LANGUAGE_MENU_ID), _T ("Download More Languages..."));
+          Res = AppendMenu (NewMenu, MF_STRING , GetUseAllocatedIds () ? REMOVE_DICS + GetLangsMenuIdStart () : MAKEWORD (REMOVE_DICS, LANGUAGE_MENU_ID), _T ("Remove Unneeded Languages..."));
         }
       }
       else if (LibMode == 1)
-        Res = AppendMenu (NewMenu, MF_STRING , GetUseAllocatedIds () ? DOWNLOAD_DICS + GetLangsMenuIdStart () :MAKEWORD (DOWNLOAD_DICS, LANGUAGE_MENU_ID), _T ("Download Languages..."));
+        Res = AppendMenu (NewMenu, MF_STRING , GetUseAllocatedIds () ? DOWNLOAD_DICS + GetLangsMenuIdStart () : MAKEWORD (DOWNLOAD_DICS, LANGUAGE_MENU_ID), _T ("Download Languages..."));
     }
   }
   else
@@ -1702,20 +1710,60 @@ void SpellChecker::FindNextMistake ()
     char *IteratingChar = IteratingStart;
     if (!IgnoreOffsetting)
     {
-      if (CurrentEncoding == ENCODING_UTF8)
+      switch (CurrentEncoding)
       {
-        while (Utf8IsCont (*IteratingChar) && Range.lpstrText < IteratingChar)
-          IteratingChar--;
-
-        while ((!Utf8chr ( DelimUtf8Converted, IteratingChar)) && Range.lpstrText < IteratingChar)
+      case ENCODING_UTF8:
         {
-          IteratingChar = (char *) Utf8Dec (Range.lpstrText, IteratingChar);
+          int CharsFound = 0;
+          while (Utf8IsCont (*IteratingChar) && Range.lpstrText < IteratingChar)
+          {
+            IteratingChar--;
+            CharsFound++;
+          }
+
+          if (CharsFound < Utf8GetCharSize (*IteratingChar) - 1) // If tail of leading symbol isn't full then we're skipping it
+          {
+            IteratingChar--;
+            while (Utf8IsCont (*IteratingChar) && Range.lpstrText < IteratingChar)
+              IteratingChar--;
+          }
+
+          while ((!Utf8chr ( DelimUtf8Converted, IteratingChar)) && Range.lpstrText < IteratingChar)
+          {
+            IteratingChar = (char *) Utf8Dec (Range.lpstrText, IteratingChar);
+          }
         }
-      }
-      else
-      {
-        while (!strchr (DelimConverted, *IteratingChar) && Range.lpstrText < IteratingChar)
-          IteratingChar--;
+      case ENCODING_ANSI:
+        {
+          while (!strchr (DelimConverted, *IteratingChar) && Range.lpstrText < IteratingChar)
+            IteratingChar--;
+        }
+        break;
+      case ENCODING_WCHAR:
+        {
+          size_t *Indexation = 0;
+          wchar_t *ConvertedRange = 0;
+          int CharsFound = 0;
+          while (Utf8IsCont (*IteratingChar) && Range.lpstrText < IteratingChar)
+          {
+            IteratingChar--;
+            CharsFound++;
+          }
+          if (CharsFound < Utf8GetCharSize (*IteratingChar) - 1)
+            *(IteratingChar) = 0;
+
+          SetStringSUtf8Safe (ConvertedRange, Range.lpstrText, Indexation);
+          int i = wcslen (ConvertedRange) - 1;
+          IteratingChar = Range.lpstrText + Indexation[i];
+          while (!wcschr (DelimConvertedWchar, ConvertedRange[i]) && i > 0)
+          {
+            i--;
+            IteratingChar = Range.lpstrText + Indexation[i];
+          }
+          CLEAN_AND_ZERO_ARR (Indexation);
+          CLEAN_AND_ZERO_ARR (ConvertedRange);
+        }
+        break;
       }
 
       *IteratingChar = '\0';
@@ -1774,24 +1822,55 @@ void SpellChecker::FindPrevMistake ()
     }
     Range.lpstrText = new char [Range.chrg.cpMax - Range.chrg.cpMin + 1 + 1];
     SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETTEXTRANGE, 0, (LPARAM) &Range);
+    wchar_t *ConvertedRange = 0;
+    size_t *Indexation = 0;
     char *IteratingStart = Range.lpstrText;
     char *IteratingChar = IteratingStart;
     if (!IgnoreOffsetting)
     {
-      if (CurrentEncoding == ENCODING_UTF8)
+      switch (CurrentEncoding)
       {
-        while (Utf8IsCont (*IteratingChar) && *IteratingChar)
-          IteratingChar++;
-
-        while ((!Utf8chr ( DelimUtf8Converted, IteratingChar)) && *IteratingChar)
+      case ENCODING_UTF8:
         {
-          IteratingChar = (char *) Utf8Inc (IteratingChar);
+          while (Utf8IsCont (*IteratingChar) && *IteratingChar)
+            IteratingChar++;
+
+          while ((!Utf8chr ( DelimUtf8Converted, IteratingChar)) && *IteratingChar)
+          {
+            IteratingChar = (char *) Utf8Inc (IteratingChar);
+          }
         }
-      }
-      else
-      {
-        while (!strchr (DelimConverted, *IteratingChar) && IteratingChar)
-          IteratingChar++;
+        break;
+      case ENCODING_ANSI:
+        {
+          while (!strchr (DelimConverted, *IteratingChar) && IteratingChar)
+            IteratingChar++;
+        }
+        break;
+      case ENCODING_WCHAR:
+        {
+          while (Utf8IsCont (*IteratingChar) && *IteratingChar)
+            IteratingChar++;
+          char *IteratingCharAtStart = IteratingChar;
+          char *OneMoreIteratingChar = Range.lpstrText + strlen (Range.lpstrText) - 1;
+          int CharsFound = 0;
+          while (Utf8IsCont (*OneMoreIteratingChar) && Range.lpstrText < OneMoreIteratingChar)
+          {
+            OneMoreIteratingChar--;
+            CharsFound++;
+          }
+          if (CharsFound < Utf8GetCharSize (*IteratingChar) - 1)
+            *(OneMoreIteratingChar) = 0;
+
+          SetStringSUtf8Safe (ConvertedRange, IteratingChar, Indexation);
+          int i = 0;
+          IteratingChar = IteratingCharAtStart + Indexation [i];
+          while (!wcschr (DelimConvertedWchar, ConvertedRange[i]) && ConvertedRange[i])
+          {
+            i++;
+            IteratingChar = IteratingCharAtStart + Indexation [i];
+          }
+        }
       }
     }
     int offset = IteratingChar - IteratingStart;
@@ -1799,8 +1878,10 @@ void SpellChecker::FindPrevMistake ()
     SCNotification scn;
     scn.nmhdr.code = SCN_SCROLLED;
     SendMsgToNpp (NppDataInstance, WM_NOTIFY, 0, (LPARAM) &scn);
-    Result = CheckText (Range.lpstrText + offset, Range.chrg.cpMin + offset, FIND_LAST);
+    Result = CheckText (Range.lpstrText + offset, Range.chrg.cpMin + offset, FIND_LAST); // Possibly there should be done optimization to avoid double conversion
     CLEAN_AND_ZERO_ARR (Range.lpstrText);
+    CLEAN_AND_ZERO_ARR (ConvertedRange);
+    CLEAN_AND_ZERO (Indexation);
     if (Result)
       break;
 
@@ -1841,7 +1922,7 @@ BOOL SpellChecker::GetWordUnderCursorIsRight (long &Pos, long &Length, BOOL UseT
 
   if (!UseTextCursor)
   {
-    if(GetCursorPos(&p) == 0)
+    if (GetCursorPos(&p) == 0)
       return TRUE;
 
     ScreenToClient(GetScintillaWindow (NppDataInstance), &p);
@@ -1851,23 +1932,41 @@ BOOL SpellChecker::GetWordUnderCursorIsRight (long &Pos, long &Length, BOOL UseT
   else
     initCharPos = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETCURRENTPOS);
 
-  if(initCharPos != -1){
+  if (initCharPos != -1)
+  {
     int Line = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_LINEFROMPOSITION, initCharPos);
     long LineLength = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_LINELENGTH, Line);
     char *Buf = new char[LineLength + 1];
     SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETLINE, Line, (LPARAM) Buf);
     Buf [LineLength] = 0;
     long Offset = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_POSITIONFROMLINE, Line);
-    char *Word = GetWordAt (initCharPos, Buf, Offset);
+    char *WordFound = GetWordAt (initCharPos, Buf, Offset);
+    char *Word = 0;
+    switch (CurrentEncoding)
+    {
+    case ENCODING_ANSI:
+      SetString (Word, WordFound);
+      break;
+    case ENCODING_UTF8:
+      SetString (Word, WordFound);
+      break;
+    case ENCODING_WCHAR:
+      {
+        wchar_t *TempWord = 0;
+        SetStringSUtf8 (TempWord, WordFound);
+        Word = (char *) TempWord;
+        break;
+      }
+    }
     if (!Word || !*Word)
     {
       Ret = TRUE;
     }
     else
     {
-      Pos = Word - Buf + Offset;
-      long PosEnd = Pos + strlen (Word);
-      CheckSpecialDelimeters (Word, Buf, Pos, PosEnd);
+      Pos = WordFound - Buf + Offset;
+      long PosEnd = Pos + strlen (WordFound);
+      CheckSpecialDelimeters (Word, Pos, PosEnd);
       long WordLen = PosEnd - Pos;
       if (CheckWord (Word, Pos, Pos + WordLen - 1))
       {
@@ -1880,6 +1979,7 @@ BOOL SpellChecker::GetWordUnderCursorIsRight (long &Pos, long &Length, BOOL UseT
       }
     }
     CLEAN_AND_ZERO_ARR (Buf);
+    CLEAN_AND_ZERO_ARR (Word);
   }
   return Ret;
 }
@@ -1890,40 +1990,82 @@ char *SpellChecker::GetWordAt (long CharPos, char *Text, long Offset)
   if (!DelimUtf8)
     return 0;
 
+  wchar_t *ConvertedText = 0;
+  size_t *Indexation = 0;
+  int index = 0; // Which wchar_t we're iterating currently
+
   char *Iterator = Text + CharPos - Offset;
 
-  if (CurrentEncoding == ENCODING_UTF8)
+  switch (CurrentEncoding)
   {
+  case ENCODING_UTF8:
     while ((!Utf8chr ( DelimUtf8Converted, Iterator)) && Text < Iterator)
       Iterator = (char *) Utf8Dec (Text, Iterator);
-  }
-  else
-  {
+    break;
+  case ENCODING_ANSI:
     while (!strchr (DelimConverted, *Iterator) && Text < Iterator)
       Iterator--;
-  }
+    break;
+  case ENCODING_WCHAR:
+    SetStringSUtf8Safe (ConvertedText, Text, Indexation);
+    for (unsigned int i = 0; i < wcslen (ConvertedText); i++)
+    {
+      if (Indexation[i] >= (unsigned int) (Iterator - Text))
+      {
+        index = i;
+        break;
+      }
+    }
 
+    while (!wcschr (DelimConvertedWchar, ConvertedText[index]) && index > 0)
+    {
+      index--;
+    }
+    break;
+  }
   UsedText = Iterator;
 
-  if (CurrentEncoding == ENCODING_UTF8)
+  switch (CurrentEncoding)
   {
-    if (Utf8chr ( DelimUtf8Converted, UsedText))
+  case ENCODING_UTF8:
+    if (Utf8chr (DelimUtf8Converted, UsedText))
       UsedText = Utf8Inc (UsedText); // Then find first token after this zero
-  }
-  else
-  {
+    break;
+  case ENCODING_ANSI:
     if (strchr (DelimConverted, *UsedText))
       UsedText++;
+    break;
+  case ENCODING_WCHAR:
+    if (wcschr (DelimConvertedWchar, ConvertedText[index]))
+    {
+      index++;
+    }
+    break;
   }
 
   char *Context = 0;
   // We're just taking the first token (basically repeating the same code as an in CheckVisible
 
   char *Res = 0;
-  if (CurrentEncoding == ENCODING_UTF8)
+  switch (CurrentEncoding)
+  {
+  case ENCODING_UTF8:
     Res = (char *) Utf8strtok (UsedText, DelimUtf8Converted, &Context);
-  else
+    break;
+  case ENCODING_ANSI:
     Res = strtok_s (UsedText, DelimConverted, &Context);
+    break;
+  case ENCODING_WCHAR:
+    {
+      wchar_t *WcharRes = wcstok_s (ConvertedText + index, DelimConvertedWchar, (wchar_t **) &Context);
+      Res = Text + Indexation [WcharRes - ConvertedText];
+      Text[Indexation [WcharRes + wcslen (WcharRes) - ConvertedText]] = '\0';
+    }
+    CLEAN_AND_ZERO_ARR (ConvertedText);
+    CLEAN_AND_ZERO_ARR (Indexation);
+    break;
+  }
+
   if (Res - Text + Offset > CharPos)
     return 0;
   else
@@ -1933,8 +2075,8 @@ char *SpellChecker::GetWordAt (long CharPos, char *Text, long Offset)
 void SpellChecker::SetSuggestionsBoxTransparency ()
 {
   // Set WS_EX_LAYERED on this window
-  SetWindowLong(SuggestionsInstance->getHSelf (), GWL_EXSTYLE,
-    GetWindowLong(SuggestionsInstance->getHSelf (), GWL_EXSTYLE) | WS_EX_LAYERED);
+  SetWindowLong (SuggestionsInstance->getHSelf (), GWL_EXSTYLE,
+                 GetWindowLong(SuggestionsInstance->getHSelf (), GWL_EXSTYLE) | WS_EX_LAYERED);
   SetLayeredWindowAttributes(SuggestionsInstance->getHSelf (), 0, (255 * SBTrans) / 100, LWA_ALPHA);
   SuggestionsInstance->display (true);
   SuggestionsInstance->display (false);
@@ -1982,8 +2124,8 @@ void SpellChecker::InitSuggestionsBox ()
 void SpellChecker::ProcessMenuResult (UINT MenuId)
 {
   if ((!GetUseAllocatedIds () && HIBYTE (MenuId) != DSPELLCHECK_MENU_ID &&
-    HIBYTE (MenuId) != LANGUAGE_MENU_ID)
-    || (GetUseAllocatedIds () && ((int) MenuId < GetContextMenuIdStart () || (int) MenuId > GetContextMenuIdStart () + 350)))
+       HIBYTE (MenuId) != LANGUAGE_MENU_ID)
+      || (GetUseAllocatedIds () && ((int) MenuId < GetContextMenuIdStart () || (int) MenuId > GetContextMenuIdStart () + 350)))
     return;
   OutputDebugString (_T ("Processing Menu Result\n"));
   int UsedMenuId = 0;
@@ -2063,8 +2205,8 @@ void SpellChecker::ProcessMenuResult (UINT MenuId)
         LangString = _T ("<MULTIPLE>");
       }
       else if (Result == CUSTOMIZE_MULTIPLE_DICS ||
-        Result == DOWNLOAD_DICS ||
-        Result == REMOVE_DICS)
+               Result == DOWNLOAD_DICS ||
+               Result == REMOVE_DICS)
       {
         // All actions are done in GUI thread in that case
         return;
@@ -2105,12 +2247,25 @@ void SpellChecker::FillSuggestionsMenu (HMENU Menu)
   }
   else
   {
-    SuggestionMenuItems = new std::vector <SuggestionsMenuItem*>;
+    SuggestionMenuItems = new std::vector <SuggestionsMenuItem *>;
   }
 
   SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETTEXTRANGE, 0, (LPARAM) &Range);
 
-  SetString (SelectedWord, Range.lpstrText);
+  switch (CurrentEncoding)
+  {
+  case ENCODING_ANSI:
+  case ENCODING_UTF8:
+    SetString (SelectedWord, Range.lpstrText);
+    break;
+
+  case ENCODING_WCHAR:
+    wchar_t *TempStr = 0;
+    SetStringSUtf8 (TempStr, Range.lpstrText);
+    SelectedWord = (char *) TempStr;
+    break;
+  }
+
   ApplyConversions (SelectedWord);
 
   CLEAN_AND_ZERO_STRING_VECTOR (LastSuggestions);
@@ -2139,10 +2294,16 @@ void SpellChecker::FillSuggestionsMenu (HMENU Menu)
 
   TCHAR *MenuString = new TCHAR [WUCLength + 50 + 1]; // Add "" to dictionary
   char *BufUtf8 = 0;
-  if (CurrentEncoding == ENCODING_UTF8)
+  switch (CurrentEncoding)
+  {
+  case ENCODING_UTF8:
+  case ENCODING_WCHAR: // In that case it has nothing to deal with delimiters so we're just doing the same stuff as for UTF-8
     SetString (BufUtf8, Range.lpstrText);
-  else
+    break;
+  case ENCODING_ANSI:
     SetStringDUtf8 (BufUtf8, Range.lpstrText);
+    break;
+  }
   ApplyConversions (BufUtf8);
   SetStringSUtf8 (Buf, BufUtf8);
   _stprintf (MenuString, _T ("Ignore \"%s\" for Current Session"), Buf);
@@ -2371,7 +2532,7 @@ void SpellChecker::SaveSettings ()
   SaveToIni (_T ("Proxy_Port"), ProxyPort, 808);
   SaveToIni (_T ("Proxy_Is_Anonymous"), ProxyAnonymous, TRUE);
   SaveToIni (_T ("Proxy_Type"), ProxyType, 0);
-  std::map<TCHAR *, DWORD, bool (*)(TCHAR *, TCHAR *)>::iterator it = SettingsToSave->begin ();
+  std::map<TCHAR *, DWORD, bool ( *)(TCHAR *, TCHAR *)>::iterator it = SettingsToSave->begin ();
   for (; it != SettingsToSave->end (); ++it)
   {
     SaveToIni ((*it).first, LOWORD ((*it).second), HIWORD ((*it).second));
@@ -2514,7 +2675,7 @@ void SpellChecker::RemoveUnderline (HWND ScintillaWindow, int start, int end)
 char *SpellChecker::GetDocumentText ()
 {
   int lengthDoc = (SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETLENGTH) + 1);
-  char * buf = new char [lengthDoc];
+  char *buf = new char [lengthDoc];
   SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETTEXT, lengthDoc, (LPARAM)buf);
   return buf;
 }
@@ -2556,7 +2717,7 @@ char *SpellChecker::GetVisibleText(long *offset, BOOL NotIntersectionOnly)
 
   char *Buf = new char [range.chrg.cpMax - range.chrg.cpMin + 1]; // + one byte for terminating zero
   range.lpstrText = Buf;
-  SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETTEXTRANGE, NULL ,(LPARAM)&range);
+  SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETTEXTRANGE, NULL , (LPARAM)&range);
   *offset = range.chrg.cpMin;
   Buf[range.chrg.cpMax - range.chrg.cpMin] = 0;
   return Buf;
@@ -2565,7 +2726,7 @@ char *SpellChecker::GetVisibleText(long *offset, BOOL NotIntersectionOnly)
 void SpellChecker::ClearAllUnderlines ()
 {
   int length = SendMsgToEditor(NppDataInstance, SCI_GETLENGTH);
-  if(length > 0)
+  if (length > 0)
   {
     PostMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETINDICATORCURRENT, SCE_ERROR_UNDERLINE);
     PostMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_INDICATORCLEARRANGE, 0, length);
@@ -2592,12 +2753,16 @@ void SpellChecker::SetAspellPath (const TCHAR *Path)
 
 void SpellChecker::SetHunspellPath (const TCHAR *Path)
 {
+  if (!Path || !*Path)
+    return;
   SetString (HunspellPath, Path);
   HunspellReinitSettings (1);
 }
 
 void SpellChecker::SetHunspellAdditionalPath (const TCHAR *Path)
 {
+  if (!Path || !*Path)
+    return;
   SetString (AdditionalHunspellPath, Path);
   HunspellReinitSettings (1);
 }
@@ -2653,7 +2818,7 @@ void SpellChecker::SaveToIniUtf8 (const TCHAR *Name, const char *Value,  const c
 
 void SpellChecker::LoadFromIni (TCHAR *&Value, const TCHAR *Name, const TCHAR *DefaultValue, BOOL InQuotes)
 {
-  if (!Name|| !DefaultValue)
+  if (!Name || !DefaultValue)
     return;
 
   CLEAN_AND_ZERO_ARR (Value);
@@ -2765,6 +2930,7 @@ void SpellChecker::SetDelimiters (const char *Str)
   _tcscat_s (TargetBuf, TargetBufLength, _T (" \n\r\t\v"));
   SetStringDUtf8 (DelimUtf8Converted, TargetBuf);
   SetStringSUtf8 (DelimConverted, DelimUtf8Converted);
+  SetStringSUtf8 (DelimConvertedWchar, DelimUtf8Converted);
   CLEAN_AND_ZERO_ARR (DestBuf);
   CLEAN_AND_ZERO_ARR (SrcBuf);
   CLEAN_AND_ZERO_ARR (TargetBuf);
@@ -2858,55 +3024,106 @@ void SpellChecker::ApplyConversions (char *Word) // In Utf-8, Maybe shortened du
   const char *ConvertTo [3];
   int Apply[3] = {IgnoreYo, IgnoreYo, ConvertSingleQuotes};
 
-  if (CurrentEncoding == ENCODING_ANSI)
+  switch (CurrentEncoding)
   {
-    ConvertFrom[0] = YoANSI;
-    ConvertFrom[1] = yoANSI;
-    ConvertFrom[2] = PunctuationApostropheANSI;
-    ConvertTo[0] = YeANSI;
-    ConvertTo[1] = yeANSI;
-    ConvertTo[2] = "\'";
-  }
-  else
-  {
-    ConvertFrom[0] = Yo;
-    ConvertFrom[1] = yo;
-    ConvertFrom[2] = PunctuationApostrophe;
-    ConvertTo[0] = Ye;
-    ConvertTo[1] = ye;
-    ConvertTo[2] = "\'";
+  case ENCODING_ANSI:
+    {
+      ConvertFrom[0] = YoANSI;
+      ConvertFrom[1] = yoANSI;
+      ConvertFrom[2] = PunctuationApostropheANSI;
+      ConvertTo[0] = YeANSI;
+      ConvertTo[1] = yeANSI;
+      ConvertTo[2] = "\'";
+      break;
+    }
+  case ENCODING_UTF8:
+    {
+      ConvertFrom[0] = Yo;
+      ConvertFrom[1] = yo;
+      ConvertFrom[2] = PunctuationApostrophe;
+      ConvertTo[0] = Ye;
+      ConvertTo[1] = ye;
+      ConvertTo[2] = "\'";
+      break;
+    }
+  case ENCODING_WCHAR:
+    ConvertFrom[0] = (char *) YoWCHAR;
+    ConvertFrom[1] = (char *) yoWCHAR;
+    ConvertFrom[2] = (char *) PunctuationApostropheWCHAR;
+    ConvertTo[0] = (char *) YeWCHAR;
+    ConvertTo[1] = (char *) yeWCHAR;
+    ConvertTo[2] = (char *) L"\'";
+    break;
   }
 
   // FOR NOW It works only if destination string is shorter than source string.
 
-  for (int i = 0; i < countof (ConvertFrom); i++)
+  switch (CurrentEncoding)
   {
-    if (!Apply[i] || ConvertFrom [i] == 0 || ConvertTo[i] == 0 || *ConvertFrom [i] == 0 || *ConvertTo [i] == 0)
-      continue;
-
-    char *Iter = Word;
-    char *NestedIter = 0;
-    int Diff = strlen (ConvertFrom[i]) - strlen (ConvertTo[i]);
-    if (Diff < 0)
-      continue; // For now this case isn't needed.
-    while (Iter = strstr (Iter, ConvertFrom[i]))
+  case ENCODING_ANSI:
+  case ENCODING_UTF8:
     {
-      for (size_t j = 0; j < strlen (ConvertTo[i]); j++)
+      for (int i = 0; i < countof (ConvertFrom); i++)
       {
-        *Iter = ConvertTo[i][j];
-        Iter++;
+        if (!Apply[i] || ConvertFrom [i] == 0 || ConvertTo[i] == 0 || *ConvertFrom [i] == 0 || *ConvertTo [i] == 0)
+          continue;
+
+        char *Iter = Word;
+        char *NestedIter = 0;
+        int Diff = strlen (ConvertFrom[i]) - strlen (ConvertTo[i]);
+        if (Diff < 0)
+          continue; // For now this case isn't needed.
+        while (Iter = strstr (Iter, ConvertFrom[i]))
+        {
+          for (size_t j = 0; j < strlen (ConvertTo[i]); j++)
+          {
+            *Iter = ConvertTo[i][j];
+            Iter++;
+          }
+          NestedIter = Iter;
+          while (*(NestedIter + Diff))
+          {
+            *NestedIter =  *(NestedIter + Diff);
+            NestedIter++;
+          }
+          for (int j = 0; j < Diff; j++)
+            *(NestedIter + j) = 0;
+        }
       }
-      NestedIter = Iter;
-      while (*(NestedIter + Diff))
+      break;
+    }
+  case ENCODING_WCHAR:
+    {
+      for (int i = 0; i < countof (ConvertFrom); i++)
       {
-        *NestedIter =  *(NestedIter + Diff);
-        NestedIter++;
+        if (!Apply[i] || ConvertFrom [i] == 0 || ConvertTo[i] == 0 || *((wchar_t *) ConvertFrom [i]) == 0 || *((wchar_t *) ConvertTo [i]) == 0)
+          continue;
+
+        wchar_t *Iter = (wchar_t *) Word;
+        wchar_t *NestedIter = 0;
+        int Diff = wcslen ((wchar_t *) ConvertFrom[i]) - wcslen ((wchar_t *) ConvertTo[i]);
+        if (Diff < 0)
+          continue; // For now this case isn't needed.
+        while (Iter = wcsstr (Iter, (wchar_t *) ConvertFrom[i]))
+        {
+          for (size_t j = 0; j < wcslen ((wchar_t *) ConvertTo[i]); j++)
+          {
+            *Iter = ((wchar_t *)ConvertTo[i])[j];
+            Iter++;
+          }
+          NestedIter = Iter;
+          while (*(NestedIter + Diff))
+          {
+            *NestedIter =  *(NestedIter + Diff);
+            NestedIter++;
+          }
+          for (int j = 0; j < Diff; j++)
+            *(NestedIter + j) = 0;
+        }
       }
-      for (int j = 0; j < Diff; j++)
-        *(NestedIter + j) = 0;
+      break;
     }
   }
-
   unsigned int LastChar = strlen (Word) - 1; // Apostrophe is ASCII char so it's leading anyway
 }
 
@@ -2935,7 +3152,20 @@ BOOL SpellChecker::CheckWord (char *Word, long Start, long End)
   ApplyConversions (Word);
 
   TCHAR *Ts = 0;
-  long SymbolsNum = (CurrentEncoding == ENCODING_UTF8) ? Utf8Length (Word) : strlen (Word);
+  long SymbolsNum = 0;
+  switch (CurrentEncoding)
+  {
+  case ENCODING_UTF8:
+    SymbolsNum = Utf8Length (Word);
+    break;
+  case ENCODING_ANSI:
+    SymbolsNum = strlen (Word);
+    break;
+  case ENCODING_WCHAR:
+    SymbolsNum = wcslen ((wchar_t *) Word);
+    break;
+  }
+
   if (SymbolsNum == 0)
   {
     res = TRUE;
@@ -2948,7 +3178,24 @@ BOOL SpellChecker::CheckWord (char *Word, long Start, long End)
     goto CleanUp;
   }
 
-  if (IgnoreNumbers && (CurrentEncoding == ENCODING_UTF8 ? Utf8pbrk (Word, "0123456789") : strpbrk (Word, "0123456789")) != 0) // Same for UTF-8 and not
+  bool ContainsNumbers = false;
+  if (IgnoreNumbers)
+  {
+    switch (CurrentEncoding)
+    {
+    case ENCODING_UTF8:
+      ContainsNumbers = (Utf8pbrk (Word, "0123456789") != 0);
+      break;
+    case ENCODING_ANSI:
+      ContainsNumbers = (strpbrk (Word, "0123456789") != 0);
+      break;
+    case ENCODING_WCHAR:
+      ContainsNumbers = (wcspbrk ((wchar_t *) Word, L"0123456789") != 0);
+      break;
+    }
+  }
+
+  if (IgnoreNumbers && ContainsNumbers)
   {
     res = TRUE;
     goto CleanUp;
@@ -2956,10 +3203,19 @@ BOOL SpellChecker::CheckWord (char *Word, long Start, long End)
 
   if (IgnoreCStart || IgnoreCHave || IgnoreCAll)
   {
-    if (CurrentEncoding == ENCODING_UTF8)
+
+    switch (CurrentEncoding)
+    {
+    case ENCODING_UTF8:
       SetStringSUtf8 (Ts, Word);
-    else
+      break;
+    case ENCODING_ANSI:
       SetString (Ts, Word);
+      break;
+    case ENCODING_WCHAR:
+      SetString (Ts, (wchar_t *) Word);
+      break;
+    }
     if (IgnoreCStart && IsCharUpper (Ts[0]))
     {
       res = TRUE;
@@ -3015,35 +3271,73 @@ CleanUp:
   return res;
 }
 
-void SpellChecker::CheckSpecialDelimeters (char *&Word, const char *TextStart, long &WordStart, long &WordEnd)
+void SpellChecker::CheckSpecialDelimeters (char *&Word, long &WordStart, long &WordEnd)
 {
-  if (RemoveBoundaryApostrophes)
+  switch (CurrentEncoding)
+  {
+  case ENCODING_ANSI:
+  case ENCODING_UTF8:
+    if (RemoveBoundaryApostrophes)
+    {
+      while (*Word == '\'' && *Word != '\0')
       {
-        while (*Word == '\'' && *Word != '\0')
-        {
-          *Word = '\0';
-          Word++;
-          WordStart++;
-        }
-
-        char *it = Word + strlen (Word) - 1;
-        while (*it == '\'' && *it != '\0' && it > TextStart)
-        {
-          *it = '\0';
-          WordEnd--;
-          it--;
-        }
+        *Word = '\0';
+        Word++;
+        WordStart++;
       }
+
+      char *it = Word + strlen (Word) - 1;
+      while (*it == '\'' && *it != '\0' && it > Word)
+      {
+        *it = '\0';
+        WordEnd--;
+        it--;
+      }
+    }
+    break;
+  case ENCODING_WCHAR:
+    wchar_t *WordWchar = (wchar_t *) Word;
+    if (RemoveBoundaryApostrophes)
+    {
+      while (*WordWchar == L'\'' && *WordWchar != L'\0')
+      {
+        *WordWchar = '\0';
+        WordWchar++;
+        WordStart++;
+      }
+
+      wchar_t *it = WordWchar + wcslen (WordWchar) - 1;
+      while (*it == L'\'' && *it != L'\0' && it > (wchar_t *) Word)
+      {
+        *it = L'\0';
+        WordEnd--;
+        it--;
+      }
+    }
+    break;
+  }
 }
 
-BOOL SpellChecker::CheckText (char *TextToCheck, long Offset, CheckTextMode Mode)
+BOOL SpellChecker::CheckText (char *InputText, long Offset, CheckTextMode Mode)
 {
-  if (!TextToCheck || !*TextToCheck)
+  if (!InputText || !*InputText)
     return FALSE;
+
+  char *TextToCheck = 0;
+  size_t *Indexation = 0;
+  if (CurrentEncoding == ENCODING_WCHAR)
+  {
+    wchar_t *WcharString =  0;
+    SetStringSUtf8Safe (WcharString, InputText, Indexation);
+    TextToCheck = (char *) WcharString;
+  }
+  else
+    SetString (TextToCheck, InputText);
 
   HWND ScintillaWindow = GetCurrentScintilla ();
   int oldid = SendMsgToEditor (ScintillaWindow, NppDataInstance, SCI_GETINDICATORCURRENT);
   char *Context = 0; // Temporary variable for strtok_s usage
+  wchar_t *ContextWchar = 0;
   char *token;
   BOOL stop = FALSE;
   long ResultingWordEnd = -1, ResultingWordStart = -1;
@@ -3055,18 +3349,36 @@ BOOL SpellChecker::CheckText (char *TextToCheck, long Offset, CheckTextMode Mode
   if (!DelimUtf8)
     return FALSE;
 
-  if (CurrentEncoding == ENCODING_UTF8)
+  switch (CurrentEncoding)
+  {
+  case ENCODING_UTF8:
     token = Utf8strtok (TextToCheck, DelimUtf8Converted, &Context);
-  else
+    break;
+  case ENCODING_ANSI:
     token = strtok_s (TextToCheck, DelimConverted, &Context);
+    break;
+  case ENCODING_WCHAR:
+    token = (char *) wcstok_s ((wchar_t *) TextToCheck, DelimConvertedWchar, &ContextWchar);
+    break;
+  };
 
   while (token)
   {
     if (token)
     {
-      WordStart = Offset + token - TextToCheck;
-      WordEnd = Offset + token - TextToCheck + strlen (token);
-      CheckSpecialDelimeters (token, TextToCheck, WordStart, WordEnd);
+      switch (CurrentEncoding)
+      {
+      case ENCODING_UTF8:
+      case ENCODING_ANSI:
+        WordStart = Offset + token - TextToCheck;
+        WordEnd = Offset + token - TextToCheck + strlen (token);
+        break;
+      case ENCODING_WCHAR:
+        WordStart = Offset + Indexation [(token - TextToCheck) >> 1];
+        WordEnd = Offset + Indexation [((token - TextToCheck) >> 1) + wcslen ((wchar_t *) token)];
+        break;
+      }
+      CheckSpecialDelimeters (token, WordStart, WordEnd);
       if (WordEnd < WordStart)
         goto newtoken;
 
@@ -3107,10 +3419,18 @@ BOOL SpellChecker::CheckText (char *TextToCheck, long Offset, CheckTextMode Mode
     }
 
 newtoken:
-    if (CurrentEncoding == ENCODING_UTF8)
+    switch (CurrentEncoding)
+    {
+    case ENCODING_UTF8:
       token =  Utf8strtok (NULL, DelimUtf8Converted, &Context);
-    else
+      break;
+    case ENCODING_ANSI:
       token = strtok_s (NULL, DelimConverted, &Context);
+      break;
+    case ENCODING_WCHAR:
+      token = (char *) wcstok_s (NULL, DelimConvertedWchar, &ContextWchar);
+      break;
+    }
   }
 
   if (Mode == UNDERLINE_ERRORS)
@@ -3126,6 +3446,17 @@ newtoken:
   }
 
   // PostMsgToEditor (ScintillaWindow, NppDataInstance, SCI_SETINDICATORCURRENT, oldid);
+  switch (CurrentEncoding)
+  {
+  case ENCODING_UTF8:
+    break;
+  case ENCODING_ANSI:
+    break;
+  case ENCODING_WCHAR:
+    CLEAN_AND_ZERO_ARR (TextToCheck);
+    break;
+  }
+
 
   switch (Mode)
   {
@@ -3148,7 +3479,7 @@ newtoken:
 void SpellChecker::ClearVisibleUnderlines ()
 {
   int length = SendMsgToEditor(NppDataInstance, SCI_GETLENGTH);
-  if(length > 0)
+  if (length > 0)
   {
     PostMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETINDICATORCURRENT, SCE_ERROR_UNDERLINE);
     PostMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_INDICATORCLEARRANGE, 0, length);
@@ -3161,7 +3492,7 @@ void SpellChecker::CheckVisible (BOOL NotIntersectionOnly)
   VisibleText = GetVisibleText (&VisibleTextOffset, NotIntersectionOnly);
   if (!VisibleText)
     return;
-  VisibleTextLength = strlen (VisibleText);
+
   CheckText (VisibleText, VisibleTextOffset, UNDERLINE_ERRORS);
 }
 
@@ -3175,7 +3506,8 @@ void SpellChecker::setEncodingById (int EncId)
   switch (EncId)
   {
   case SC_CP_UTF8:
-    CurrentEncoding = ENCODING_UTF8;
+    CurrentEncoding = ENCODING_WCHAR; // Conversion should be done manually
+    // CurrentEncoding = ENCODING_UTF8;
     // SetEncoding ("utf-8");
     break;
   default:
@@ -3256,7 +3588,7 @@ void SpellChecker::RecheckVisible (BOOL NotIntersectionOnly)
     ClearAllUnderlines ();
 }
 
-void SpellChecker::ErrorMsgBox (const TCHAR * message)
+void SpellChecker::ErrorMsgBox (const TCHAR *message)
 {
   TCHAR buf [DEFAULT_BUF_SIZE];
   _stprintf_s (buf, _T ("%s"), "DSpellCheck Error:", message, _tcslen (message));

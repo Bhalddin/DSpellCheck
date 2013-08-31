@@ -33,6 +33,7 @@ void SetString (wchar_t *&Target, const char *Str);
 // In case source is in UTF-8
 void SetStringSUtf8 (char *&Target, const char *Str);
 void SetStringSUtf8 (wchar_t *&Target, const char *Str);
+void SetStringSUtf8Safe (wchar_t *&Target, const char *Str, size_t *&Indexation, const wchar_t c = ' ');
 
 // In case destination is in UTF-8
 void SetStringDUtf8 (char *&Target, const char *Str);
