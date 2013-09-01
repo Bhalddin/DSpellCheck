@@ -72,6 +72,7 @@ public:
   void SetHunspellLanguage (const TCHAR *Str);
   void SetAspellLanguage (const TCHAR *Str);
   void SetDelimiters (const char *Str);
+  void SetDelimiterException (const char *Str);
   void SetSuggestionsNum (int Num);
   void SetAspellPath (const TCHAR *Path);
   void SetMultipleLanguages (const TCHAR *MultiString, AbstractSpellerInterface *Speller);
@@ -126,6 +127,9 @@ public:
   BOOL GetUseProxy ();
   BOOL GetProxyAnonymous ();
   int GetProxyType ();
+  void SetDelimiterMode (int mode);
+  const char *GetDelimiters ();
+  const char *GetDelimiterException ();
   long PreviousA, PreviousB;
 
 private:
@@ -146,7 +150,6 @@ private:
   void Cleanup ();
   void CheckFileName ();
   void UpdateOverridenSuggestionsBox ();
-  const char *GetDelimiters ();
   const TCHAR *GetLanguage ();
   void CallLangContextMenu ();
   void GetDefaultHunspellPath (TCHAR *&Path);
@@ -183,6 +186,7 @@ private:
   void FillDownloadDics ();
   void ResetHotSpotCache ();
   void CheckSpecialDelimeters (char *&Word, long &WordStart, long &WordEnd);
+  char *DoCommonStringTokenization (char *Str, char **Context);
 
   void SaveToIni (const TCHAR *Name, const TCHAR *Value, const TCHAR * DefaultValue, BOOL InQuotes = 0);
   void SaveToIni (const TCHAR *Name, int Value, int DefaultValue);
@@ -212,6 +216,10 @@ private:
   char *DelimUtf8Converted; // String where escape characters are properly converted to corresponding symbols
   char *DelimConverted; // Same but in ANSI encoding
   wchar_t *DelimConvertedWchar; // Same buf for wchar encoding
+  char *DelimExcUtf8;
+  char *DelimExcUtf8Converted;
+  char *DelimExcConverted;
+  wchar_t *DelimExcConvertedWchar;
   TCHAR *ServerNames[3]; // Only user ones, there'll also be bunch of predetermined ones
   TCHAR *DefaultServers[3];
   int LastUsedAddress; // equals USER_SERVER_CONST + num if user address is used, otherwise equals number of default server
@@ -251,6 +259,7 @@ private:
   TCHAR *ProxyUserName;
   int ProxyPort;
   TCHAR *ProxyPassword;
+  int DelimiterMode;
 
   int Lexer;
   std::vector <SuggestionsMenuItem *> *SuggestionMenuItems;

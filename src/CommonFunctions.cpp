@@ -504,11 +504,8 @@ char * Utf8strtok (char *s1, const char *Delimit, char **Context)
     s1 = *Context;
     if (s1 == NULL)         /* End of story? */
       return NULL;
-    else
-      s1 += Utf8spn (s1, Delimit);
-  } else {
-    s1 += Utf8spn (s1, Delimit);
   }
+  s1 += Utf8spn (s1, Delimit);
 
   /* Find end of segment */
   tmp = Utf8pbrk (s1, Delimit);
@@ -890,3 +887,75 @@ TCHAR *GetLastSlashPosition (TCHAR *Path)
 {
   return _tcsrchr (Path, _T ('\\'));
 }
+
+// strtok_s, delimiters are all non-alphabetic and non-numeric characters except one in delim
+char *strtok_s_nonalnum (char *s1, const char *delimit, char **context)
+{
+    char *tmp;
+
+    /* Skip leading delimiters if new string. */
+    if ( s1 == NULL ) {
+        s1 = *context;
+        if (s1 == NULL)         /* End of story? */
+            return NULL;
+    }
+    // Well, we should skip all the freaking delimiters here
+    // Our delimiters are non-alphabetic except the shit in delimit array, so...
+    while (*s1 && (!isalnum ((unsigned char) *s1) && strchr (delimit, *s1)))
+      s1++;
+
+    /* Find end of segment */
+    // Now we're skipping all the alnum shit and shit found in delimit
+    tmp =  s1;
+    while (*tmp && (isalnum ((unsigned char) *tmp) || strchr (delimit, *tmp)))
+      tmp++;
+    if (!*tmp)
+      tmp = 0;
+    if (tmp) {
+        /* Found another delimiter, split string and save state. */
+        *tmp = '\0';
+        *context = tmp + 1;
+    } else {
+        /* Last segment, remember that. */
+        *context = NULL;
+    }
+
+    return s1;
+}
+
+// wcstok_s, delimiters are all non-alphabetic and non-numeric characters except one in delim
+wchar_t *wcstok_s_nonalnum (wchar_t *s1, const wchar_t *delimit, wchar_t **context)
+{
+    wchar_t *tmp;
+
+    /* Skip leading delimiters if new string. */
+    if ( s1 == NULL ) {
+        s1 = *context;
+        if (s1 == NULL)         /* End of story? */
+            return NULL;
+    }
+    // Well, we should skip all the freaking delimiters here
+    // Our delimiters are non-alphabetic except the shit in delimit array, so...
+    while (*s1 && (!iswalnum (*s1) && !wcschr (delimit, *s1)))
+      s1++;
+
+    /* Find end of segment */
+    // Now we're skipping all the alnum shit and shit found in delimit
+    tmp =  s1;
+    while (*tmp && (iswalnum (*tmp) || wcschr (delimit, *tmp)))
+      tmp++;
+    if (!*tmp)
+      tmp = 0;
+    if (tmp) {
+        /* Found another delimiter, split string and save state. */
+        *tmp = '\0';
+        *context = tmp + 1;
+    } else {
+        /* Last segment, remember that. */
+        *context = NULL;
+    }
+
+    return s1;
+}
+
+

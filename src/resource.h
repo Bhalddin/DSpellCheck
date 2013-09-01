@@ -26,6 +26,7 @@
 #define IDC_REMOVE_ENDING_APOSTROPHE            1002
 #define IDC_REMOVE_USER_DICS                    1002
 #define IDC_SUGG_TYPE                           1002
+#define IDC_DELIMITER_STYLE                     1003
 #define IDC_LIBRARY                             1003
 #define IDC_REMOVE_SYSTEM                       1003
 #define IDC_DEFAULT_DELIMITERS                  1004

@@ -38,18 +38,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "SelectProxy.h"
 #include "Suggestions.h"
 
-#ifdef UNICODE
-#define DEFAULT_DELIMITERS _T (",.!?\":;{}()[]\\/=+-^$*<>|#$@%&~\u2026\u2116\u2014\u00AB\u00BB\u2013\u2022\u00A9\u203A\u201C\u201D\u00B7\u00A0\u0060\u2192\u00d7")
-#else // All non-ASCII symbols removed
-#define DEFAULT_DELIMITERS _T (",.!?\":;{}()[]\\/=+-^$*<>|#$@%&~")
-#endif
 
 SpellChecker::SpellChecker (const TCHAR *IniFilePathArg, SettingsDlg *SettingsDlgInstanceArg, NppData *NppDataInstanceArg,
                             Suggestions *SuggestionsInstanceArg, LangList *LangListInstanceArg)
 {
   CurrentPosition = 0;
   DelimUtf8 = 0;
+  DelimExcUtf8 = 0;
   DelimUtf8Converted = 0;
+  DelimExcUtf8Converted = 0;
   IniFilePath = 0;
   AspellLanguage = 0;
   AspellMultiLanguages = 0;
@@ -58,6 +55,8 @@ SpellChecker::SpellChecker (const TCHAR *IniFilePathArg, SettingsDlg *SettingsDl
   VisibleText = 0;
   DelimConverted = 0;
   DelimConvertedWchar = 0;
+  DelimExcConverted = 0;
+  DelimExcConvertedWchar = 0;
   SetString (IniFilePath, IniFilePathArg);
   SettingsDlgInstance = SettingsDlgInstanceArg;
   SuggestionsInstance = SuggestionsInstanceArg;
@@ -419,7 +418,8 @@ void SpellChecker::FillDialogs (BOOL NoDisplayCall)
   SettingsDlgInstance->GetSimpleDlg ()->SetDecodeNames (DecodeNames);
   SettingsDlgInstance->GetSimpleDlg ()->SetSuggType (SuggestionsMode);
   SettingsDlgInstance->GetSimpleDlg ()->SetOneUserDic (OneUserDic);
-  SettingsDlgInstance->GetAdvancedDlg ()->FillDelimiters (DelimUtf8);
+  SettingsDlgInstance->GetAdvancedDlg ()->SetDelimiterMode (DelimiterMode);
+  SettingsDlgInstance->GetAdvancedDlg ()->FillDelimiters (this, FALSE);
   SettingsDlgInstance->GetAdvancedDlg ()->SetConversionOpts (IgnoreYo, ConvertSingleQuotes, RemoveBoundaryApostrophes);
   SettingsDlgInstance->GetAdvancedDlg ()->SetUnderlineSettings (UnderlineColor, UnderlineStyle);
   SettingsDlgInstance->GetAdvancedDlg ()->SetIgnore (IgnoreNumbers, IgnoreCStart, IgnoreCHave, IgnoreCAll, Ignore_, IgnoreSEApostrophe, IgnoreOneLetter);
@@ -612,6 +612,12 @@ BOOL WINAPI SpellChecker::NotifyEvent (DWORD Event)
 
   case EID_SHOW_SELECT_PROXY:
     GetSelectProxy ()->display ();
+    break;
+
+  case EID_DELIM_MODE_CHANGE:
+    SettingsDlgInstance->GetAdvancedDlg ()->FillDelimiterStyle (this);
+    SettingsDlgInstance->GetAdvancedDlg ()->FillDelimiters (this, FALSE);
+    SaveSettings ();
     break;
     /*
     case EID_APPLYMENUACTION:
@@ -1906,7 +1912,7 @@ void SpellChecker::FindPrevMistake ()
 
 void SpellChecker::SetDefaultDelimiters ()
 {
-  SettingsDlgInstance->GetAdvancedDlg ()->SetDelimetersEdit (DEFAULT_DELIMITERS);
+  SettingsDlgInstance->GetAdvancedDlg ()->FillDelimiters (this, TRUE);
 }
 
 HWND SpellChecker::GetCurrentScintilla ()
@@ -1941,29 +1947,31 @@ BOOL SpellChecker::GetWordUnderCursorIsRight (long &Pos, long &Length, BOOL UseT
     Buf [LineLength] = 0;
     long Offset = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_POSITIONFROMLINE, Line);
     char *WordFound = GetWordAt (initCharPos, Buf, Offset);
-    char *Word = 0;
-    switch (CurrentEncoding)
-    {
-    case ENCODING_ANSI:
-      SetString (Word, WordFound);
-      break;
-    case ENCODING_UTF8:
-      SetString (Word, WordFound);
-      break;
-    case ENCODING_WCHAR:
-      {
-        wchar_t *TempWord = 0;
-        SetStringSUtf8 (TempWord, WordFound);
-        Word = (char *) TempWord;
-        break;
-      }
-    }
-    if (!Word || !*Word)
+
+
+    if (!WordFound || !*WordFound)
     {
       Ret = TRUE;
     }
     else
     {
+      char *Word = 0;
+      switch (CurrentEncoding)
+      {
+      case ENCODING_ANSI:
+        SetString (Word, WordFound);
+        break;
+      case ENCODING_UTF8:
+        SetString (Word, WordFound);
+        break;
+      case ENCODING_WCHAR:
+        {
+          wchar_t *TempWord = 0;
+          SetStringSUtf8 (TempWord, WordFound);
+          Word = (char *) TempWord;
+          break;
+        }
+      }
       Pos = WordFound - Buf + Offset;
       long PosEnd = Pos + strlen (WordFound);
       CheckSpecialDelimeters (Word, Pos, PosEnd);
@@ -1977,9 +1985,9 @@ BOOL SpellChecker::GetWordUnderCursorIsRight (long &Pos, long &Length, BOOL UseT
         Ret = FALSE;
         Length = WordLen;
       }
+      CLEAN_AND_ZERO_ARR (Word);
     }
     CLEAN_AND_ZERO_ARR (Buf);
-    CLEAN_AND_ZERO_ARR (Word);
   }
   return Ret;
 }
@@ -2050,14 +2058,12 @@ char *SpellChecker::GetWordAt (long CharPos, char *Text, long Offset)
   switch (CurrentEncoding)
   {
   case ENCODING_UTF8:
-    Res = (char *) Utf8strtok (UsedText, DelimUtf8Converted, &Context);
-    break;
   case ENCODING_ANSI:
-    Res = strtok_s (UsedText, DelimConverted, &Context);
+    Res = DoCommonStringTokenization (UsedText, &Context);
     break;
   case ENCODING_WCHAR:
     {
-      wchar_t *WcharRes = wcstok_s (ConvertedText + index, DelimConvertedWchar, (wchar_t **) &Context);
+      wchar_t *WcharRes = (wchar_t *) DoCommonStringTokenization ((char *) (ConvertedText + index), &Context);
       Res = Text + Indexation [WcharRes - ConvertedText];
       Text[Indexation [WcharRes + wcslen (WcharRes) - ConvertedText]] = '\0';
     }
@@ -2514,7 +2520,9 @@ void SpellChecker::SaveSettings ()
   SaveToIni (_T ("Suggestions_Number"), SuggestionsNum, 5);
   char *DefaultDelimUtf8 = 0;
   SetStringDUtf8 (DefaultDelimUtf8, DEFAULT_DELIMITERS);
+  SaveToIni (_T ("Delimiter_Mode"), DelimiterMode, 0);
   SaveToIniUtf8 (_T ("Delimiters"), DelimUtf8, DefaultDelimUtf8, TRUE);
+  SaveToIniUtf8 (_T ("Delimiter_Exceptions"), DelimExcUtf8, DefaultDelimUtf8, TRUE);
   CLEAN_AND_ZERO_ARR (DefaultDelimUtf8);
   SaveToIni (_T ("Find_Next_Buffer_Size"), BufferSize / 1024, 4);
   SaveToIni (_T ("Suggestions_Button_Size"), SBSize, 15);
@@ -2548,6 +2556,12 @@ void SpellChecker::SetOneUserDic (BOOL Value)
 {
   OneUserDic = Value;
   HunspellSpeller->SetUseOneDic (Value);
+}
+
+
+void SpellChecker::SetDelimiterMode (int mode)
+{
+  DelimiterMode = mode;
 }
 
 BOOL SpellChecker::GetOneUserDic ()
@@ -2598,9 +2612,14 @@ void SpellChecker::LoadSettings ()
   SetHunspellLanguage (TBuf);
   CLEAN_AND_ZERO_ARR (TBuf);
 
+  LoadFromIni (DelimiterMode, _T ("Delimiter_Mode"), 0);
+
   SetStringDUtf8 (BufUtf8, DEFAULT_DELIMITERS);
   LoadFromIniUtf8 (BufUtf8, _T ("Delimiters"), BufUtf8, TRUE);
   SetDelimiters (BufUtf8);
+  SetStringDUtf8 (BufUtf8, DEFAULT_DELIMITER_EXCEPTION);
+  LoadFromIniUtf8 (BufUtf8, _T ("Delimiter_Exceptions"), BufUtf8, TRUE);
+  SetDelimiterException (BufUtf8);
   LoadFromIni (SuggestionsNum, _T ("Suggestions_Number"), 5);
   LoadFromIni (IgnoreYo, _T ("Ignore_Yo"), 0);
   LoadFromIni (ConvertSingleQuotes, _T ("Convert_Single_Quotes_To_Apostrophe"), 1);
@@ -2911,6 +2930,11 @@ const char *SpellChecker::GetDelimiters ()
   return DelimUtf8;
 }
 
+const char *SpellChecker::GetDelimiterException ()
+{
+  return DelimExcUtf8;
+}
+
 void SpellChecker::SetSuggestionsNum (int Num)
 {
   SuggestionsNum = Num;
@@ -2934,6 +2958,20 @@ void SpellChecker::SetDelimiters (const char *Str)
   CLEAN_AND_ZERO_ARR (DestBuf);
   CLEAN_AND_ZERO_ARR (SrcBuf);
   CLEAN_AND_ZERO_ARR (TargetBuf);
+}
+
+void SpellChecker::SetDelimiterException (const char *Str)
+{
+  TCHAR *DestBuf = 0;
+  TCHAR *SrcBuf = 0;
+  SetString (DelimExcUtf8, Str);
+  SetStringSUtf8 (SrcBuf, DelimExcUtf8);
+  SetParsedString (DestBuf, SrcBuf);
+  SetString (DelimExcUtf8Converted, DestBuf);
+  SetStringSUtf8 (DelimExcConverted, DelimExcUtf8Converted);
+  SetStringSUtf8 (DelimExcConvertedWchar, DelimExcUtf8Converted);
+  CLEAN_AND_ZERO_ARR (DestBuf);
+  CLEAN_AND_ZERO_ARR (SrcBuf);
 }
 
 void SpellChecker::SetMultipleLanguages (const TCHAR *MultiString, AbstractSpellerInterface *Speller)
@@ -3318,6 +3356,47 @@ void SpellChecker::CheckSpecialDelimeters (char *&Word, long &WordStart, long &W
   }
 }
 
+// Delims are taken internally
+char *SpellChecker::DoCommonStringTokenization (char *Str, char **Context)
+{
+  char *Res = 0;
+  switch (DelimiterMode)
+  {
+  case DelimiterModes::SPECIFIED:
+
+    switch (CurrentEncoding)
+    {
+    case ENCODING_UTF8:
+      return Utf8strtok (Str, DelimUtf8Converted, Context);
+      break;
+    case ENCODING_ANSI:
+      return strtok_s (Str, DelimConverted, Context);
+      break;
+    case ENCODING_WCHAR:
+      return (char *) wcstok_s ((wchar_t *) Str, DelimConvertedWchar, (wchar_t **) Context);
+      break;
+    }
+    break;
+  case DelimiterModes::ALLEXCEPT:
+
+    switch (CurrentEncoding)
+    {
+    case ENCODING_UTF8:
+      return 0;
+      // UNSUPPORTED
+      break;
+    case ENCODING_ANSI:
+      return strtok_s_nonalnum (Str, DelimExcConverted, Context);
+      break;
+    case ENCODING_WCHAR:
+      return (char *) wcstok_s_nonalnum ((wchar_t *) Str, DelimExcConvertedWchar, (wchar_t **) Context);
+      break;
+    }
+    break;
+  }
+  return 0;
+}
+
 BOOL SpellChecker::CheckText (char *InputText, long Offset, CheckTextMode Mode)
 {
   if (!InputText || !*InputText)
@@ -3337,7 +3416,6 @@ BOOL SpellChecker::CheckText (char *InputText, long Offset, CheckTextMode Mode)
   HWND ScintillaWindow = GetCurrentScintilla ();
   int oldid = SendMsgToEditor (ScintillaWindow, NppDataInstance, SCI_GETINDICATORCURRENT);
   char *Context = 0; // Temporary variable for strtok_s usage
-  wchar_t *ContextWchar = 0;
   char *token;
   BOOL stop = FALSE;
   long ResultingWordEnd = -1, ResultingWordStart = -1;
@@ -3349,18 +3427,7 @@ BOOL SpellChecker::CheckText (char *InputText, long Offset, CheckTextMode Mode)
   if (!DelimUtf8)
     return FALSE;
 
-  switch (CurrentEncoding)
-  {
-  case ENCODING_UTF8:
-    token = Utf8strtok (TextToCheck, DelimUtf8Converted, &Context);
-    break;
-  case ENCODING_ANSI:
-    token = strtok_s (TextToCheck, DelimConverted, &Context);
-    break;
-  case ENCODING_WCHAR:
-    token = (char *) wcstok_s ((wchar_t *) TextToCheck, DelimConvertedWchar, &ContextWchar);
-    break;
-  };
+  token = DoCommonStringTokenization (TextToCheck, &Context);
 
   while (token)
   {
@@ -3419,18 +3486,7 @@ BOOL SpellChecker::CheckText (char *InputText, long Offset, CheckTextMode Mode)
     }
 
 newtoken:
-    switch (CurrentEncoding)
-    {
-    case ENCODING_UTF8:
-      token =  Utf8strtok (NULL, DelimUtf8Converted, &Context);
-      break;
-    case ENCODING_ANSI:
-      token = strtok_s (NULL, DelimConverted, &Context);
-      break;
-    case ENCODING_WCHAR:
-      token = (char *) wcstok_s (NULL, DelimConvertedWchar, &ContextWchar);
-      break;
-    }
+    token = DoCommonStringTokenization (NULL, &Context);
   }
 
   if (Mode == UNDERLINE_ERRORS)

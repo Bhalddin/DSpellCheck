@@ -94,13 +94,15 @@ class AdvancedDlg : public StaticDialog
 {
 public:
   void ApplySettings (SpellChecker *SpellCheckerInstance);
-  void FillDelimiters (const char *Delimiters);
-  void SetDelimetersEdit (TCHAR *Delimiters);
+  void FillDelimiters (SpellChecker *SpellCheckerInstance, BOOL FillWithDefault);
+
   void SetConversionOpts (BOOL ConvertYo, BOOL ConvertSingleQuotesArg, BOOL RemoveSingleApostrophe);
   void SetRecheckDelay (int Delay);
   int GetRecheckDelay ();
+  void FillDelimiterStyle (SpellChecker *SpellCheckerInstance);
   void SetSuggBoxSettings (int Size, int Trans);
   void SetUnderlineSettings (int Color, int Style);
+  void SetDelimiterMode (int DelimMode);
   void SetIgnore (BOOL IgnoreNumbersArg, BOOL IgnoreCStartArg, BOOL IgnoreCHaveArg, BOOL IgnoreCAllArg, BOOL Ignore_Arg,
     BOOL Ignore_SA_Apostrophe_Arg, BOOL IgnoreOneLetter);
   void SetBufferSize (int Size);
@@ -127,6 +129,7 @@ private:
   HWND HSliderTransparency;
   HWND HBufferSize;
   HWND HRemoveBoundaryApostrophes;
+  HWND HDelimiterStyle;
 
   HBRUSH Brush;
   NppData NppDataInstance;

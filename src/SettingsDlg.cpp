@@ -607,12 +607,32 @@ void AdvancedDlg::SetUnderlineSettings (int Color, int Style)
   ComboBox_SetCurSel (HUnderlineStyle, Style);
 }
 
-void AdvancedDlg::FillDelimiters (const char *Delimiters)
+void AdvancedDlg::SetDelimiterMode (int DelimMode)
+{
+  ComboBox_SetCurSel (HDelimiterStyle, DelimMode);
+}
+
+void AdvancedDlg::FillDelimiters (SpellChecker *SpellCheckerInstance, BOOL FillWithDefault)
 {
   TCHAR *TBuf = 0;
-  SetStringSUtf8 (TBuf, Delimiters);
+
+  switch (ComboBox_GetCurSel (HDelimiterStyle))
+    {
+      case DelimiterModes::SPECIFIED:
+        if (FillWithDefault)
+          SetString (TBuf, DEFAULT_DELIMITERS);
+        else
+          SetStringSUtf8 (TBuf, SpellCheckerInstance->GetDelimiters ());
+        break;
+      case DelimiterModes::ALLEXCEPT:
+        if (FillWithDefault)
+          SetString (TBuf, DEFAULT_DELIMITER_EXCEPTION);
+        else
+          SetStringSUtf8 (TBuf, SpellCheckerInstance->GetDelimiterException ());
+        break;
+    }
   Edit_SetText (HEditDelimiters, TBuf);
-  CLEAN_AND_ZERO_ARR (TBuf);
+    CLEAN_AND_ZERO_ARR (TBuf);
 }
 
 void AdvancedDlg::SetConversionOpts (BOOL ConvertYo, BOOL ConvertSingleQuotesArg, BOOL RemoveBoundaryApostrophes)
@@ -632,6 +652,11 @@ void AdvancedDlg::SetIgnore (BOOL IgnoreNumbersArg, BOOL IgnoreCStartArg, BOOL I
   Button_SetCheck (HIgnoreOneLetter, IgnoreOneLetter ? BST_CHECKED : BST_UNCHECKED);
   Button_SetCheck (HIgnore_, Ignore_Arg ? BST_CHECKED : BST_UNCHECKED);
   Button_SetCheck (HIgnoreSEApostrophe, Ignore_SA_Apostrophe_Arg ? BST_CHECKED : BST_UNCHECKED);
+}
+
+void AdvancedDlg::FillDelimiterStyle (SpellChecker *SpellCheckerInstance)
+{
+  SpellCheckerInstance->SetDelimiterMode (ComboBox_GetCurSel (HDelimiterStyle));
 }
 
 void AdvancedDlg::SetSuggBoxSettings (int Size, int Trans)
@@ -679,8 +704,10 @@ BOOL CALLBACK AdvancedDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
       HSliderSize = ::GetDlgItem (_hSelf, IDC_SLIDER_SIZE);
       HSliderTransparency = ::GetDlgItem (_hSelf, IDC_SLIDER_TRANSPARENCY);
       HBufferSize = ::GetDlgItem (_hSelf, IDC_BUFFER_SIZE);
+      HDelimiterStyle = ::GetDlgItem (_hSelf, IDC_DELIMITER_STYLE);
       SendMessage (HSliderSize, TBM_SETRANGE, TRUE, MAKELPARAM (5, 22));
       SendMessage (HSliderTransparency, TBM_SETRANGE, TRUE, MAKELPARAM (5, 100));
+
 
       Brush = 0;
 
@@ -691,6 +718,9 @@ BOOL CALLBACK AdvancedDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
       CreateToolTip (IDC_IGNORE_SE_APOSTROPHE, _hSelf, _T ("Words like this sadly cannot be added to Aspell user dictionary"));
       CreateToolTip (IDC_REMOVE_ENDING_APOSTROPHE, _hSelf, _T ("Words like this are mostly mean plural possessive form in English, if you want to add such forms of words to dictionary manually, please uncheck"));
 
+      ComboBox_AddString (HDelimiterStyle, _T ("Only specified symbols (plus \\r, \\n, \\t and spaces)"));
+      ComboBox_AddString (HDelimiterStyle, _T ("All non-letter, non-numeric symbols, except specified"));
+      ComboBox_SetCurSel (HDelimiterStyle, 0);
       ComboBox_ResetContent (HUnderlineStyle);
       for (int i = 0; i < countof (IndicNames); i++)
         ComboBox_AddString (HUnderlineStyle, IndicNames[i]);
@@ -768,6 +798,12 @@ BOOL CALLBACK AdvancedDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
         return TRUE;
       }
       break;
+    case IDC_LIBRARY:
+      if (HIWORD (wParam) == CBN_SELCHANGE)
+      {
+        SendEvent (EID_DELIM_MODE_CHANGE);
+      }
+      break;
     case IDC_BUFFER_SIZE:
       if (HIWORD (wParam) == EN_CHANGE)
       {
@@ -809,11 +845,6 @@ BOOL CALLBACK AdvancedDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
   return FALSE;
 }
 
-void AdvancedDlg::SetDelimetersEdit (TCHAR *Delimiters)
-{
-  Edit_SetText (HEditDelimiters, Delimiters);
-}
-
 void AdvancedDlg::SetRecheckDelay (int Delay)
 {
   TCHAR Buf[DEFAULT_BUF_SIZE];
@@ -834,13 +865,6 @@ int AdvancedDlg::GetRecheckDelay ()
 void AdvancedDlg::ApplySettings (SpellChecker *SpellCheckerInstance)
 {
   TCHAR *TBuf = 0;
-  int Length = Edit_GetTextLength (HEditDelimiters);
-  TBuf = new TCHAR[Length + 1];
-  Edit_GetText (HEditDelimiters, TBuf, Length + 1);
-  char *BufUtf8 = 0;
-  SetStringDUtf8 (BufUtf8, TBuf);
-  CLEAN_AND_ZERO_ARR (TBuf);
-  SpellCheckerInstance->SetDelimiters (BufUtf8);
   SpellCheckerInstance->SetConversionOptions (Button_GetCheck (HIgnoreYo) == BST_CHECKED ? TRUE : FALSE,
     Button_GetCheck (HConvertSingleQuotes) == BST_CHECKED ? TRUE : FALSE,
     Button_GetCheck (HRemoveBoundaryApostrophes) == BST_CHECKED ? TRUE : FALSE
@@ -864,6 +888,22 @@ void AdvancedDlg::ApplySettings (SpellChecker *SpellCheckerInstance)
   int x = _tcstol (TBuf, &EndPtr, 10);
   SpellCheckerInstance->SetBufferSize (x);
   GetDownloadDics ()->UpdateListBox ();
+  int Length = Edit_GetTextLength (HEditDelimiters);
+  TBuf = new TCHAR[Length + 1];
+  Edit_GetText (HEditDelimiters, TBuf, Length + 1);
+  char *BufUtf8 = 0;
+  SetStringDUtf8 (BufUtf8, TBuf);
+  CLEAN_AND_ZERO_ARR (TBuf);
+
+  switch (ComboBox_GetCurSel (HDelimiterStyle))
+    {
+      case DelimiterModes::SPECIFIED:
+        SpellCheckerInstance->SetDelimiters (BufUtf8);
+        break;
+      case DelimiterModes::ALLEXCEPT:
+        SpellCheckerInstance->SetDelimiterException (BufUtf8);
+        break;
+    }
 
   CLEAN_AND_ZERO_ARR (BufUtf8);
   CLEAN_AND_ZERO_ARR (TBuf);
