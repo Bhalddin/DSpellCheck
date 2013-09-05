@@ -257,12 +257,15 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
     break;
 
   case SCN_UPDATEUI:
+    if (notifyCode->updated & SC_UPDATE_SELECTION)
+      SendEvent (EID_SELECTION_CHANGED);
+
     if(notifyCode->updated & (SC_UPDATE_CONTENT)  && !Timer && !RestylingCausedRecheckWasDone) // If restyling wasn't caused by user input...
     {
       SendEvent (EID_RECHECK_VISIBLE);
       RestylingCausedRecheckWasDone = TRUE;
     }
-    else if(notifyCode->updated & (SC_UPDATE_V_SCROLL | SC_UPDATE_H_SCROLL) && !Timer) // If scroll wasn't caused by user input...
+    else if (notifyCode->updated & (SC_UPDATE_V_SCROLL | SC_UPDATE_H_SCROLL) && !Timer) // If scroll wasn't caused by user input...
     {
       SendEvent (EID_RECHECK_INTERSECTION);
       RestylingCausedRecheckWasDone = FALSE;
@@ -291,6 +294,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
         ChangeTimerQueueTimer (0, Timer, RecheckDelay, 0);
       else
         CreateTimerQueueTimer (&Timer, 0, ExecuteQueue, NULL, RecheckDelay, 0 , 0);
+      SendEvent (EID_EDITING_DONE);
     }
     break;
 

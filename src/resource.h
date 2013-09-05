@@ -33,6 +33,7 @@
 #define IDC_DOWNLOADDICS                        1004
 #define IDC_COMBO_LANGUAGE                      1005
 #define IDC_INSTALL_SYSTEM                      1005
+#define IDC_RECHECK_PREVENTION_TYPE             1005
 #define IDC_ASPELLPATH                          1006
 #define IDC_DELIMETERS                          1006
 #define IDC_BROWSEASPELLPATH                    1007

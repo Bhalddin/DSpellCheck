@@ -98,8 +98,10 @@ SpellChecker::SpellChecker (const TCHAR *IniFilePathArg, SettingsDlg *SettingsDl
   ProxyAnonymous = TRUE;
   ProxyType = 0;
   ProxyPort = 0;
+  LastCurPos = 0;
   SettingsLoaded = FALSE;
   UseProxy = FALSE;
+  WordNearCursorProtection = FALSE;
   SettingsToSave = new std::map<TCHAR *, DWORD, bool ( *)(TCHAR *, TCHAR *)> (SortCompare);
   if (SendMsgToNpp (NppDataInstance, NPPM_ALLOCATESUPPORTED, 0, 0))
   {
@@ -425,6 +427,7 @@ void SpellChecker::FillDialogs (BOOL NoDisplayCall)
   SettingsDlgInstance->GetAdvancedDlg ()->SetIgnore (IgnoreNumbers, IgnoreCStart, IgnoreCHave, IgnoreCAll, Ignore_, IgnoreSEApostrophe, IgnoreOneLetter);
   SettingsDlgInstance->GetAdvancedDlg ()->SetSuggBoxSettings (SBSize, SBTrans);
   SettingsDlgInstance->GetAdvancedDlg ()->SetBufferSize (BufferSize / 1024);
+  SettingsDlgInstance->GetAdvancedDlg ()->SetRecheckPreventionType (RecheckPreventionType);
   if (!NoDisplayCall)
     SettingsDlgInstance->display ();
 }
@@ -618,6 +621,62 @@ BOOL WINAPI SpellChecker::NotifyEvent (DWORD Event)
     SettingsDlgInstance->GetAdvancedDlg ()->FillDelimiterStyle (this);
     SettingsDlgInstance->GetAdvancedDlg ()->FillDelimiters (this, FALSE);
     SaveSettings ();
+    break;
+
+  case EID_EDITING_DONE:
+    if (RecheckPreventionType == RecheckPreventionTypes::FIREFOX_LIKE)
+      {
+        BOOL RecheckNeeded = FALSE;
+        if (!WordNearCursorProtection)
+          RecheckNeeded = TRUE;
+
+        WordNearCursorProtection = TRUE;
+        if (RecheckNeeded)
+          RecheckVisible ();
+      }
+    else
+      WordNearCursorProtection = FALSE;
+
+  LastCurPos = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETCURRENTPOS);
+  // break;
+
+  case EID_SELECTION_CHANGED:
+    if (RecheckPreventionType == RecheckPreventionTypes::FIREFOX_LIKE)
+    {
+      BOOL RecheckNeeded = FALSE;
+      long NewCurPos = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETCURRENTPOS);
+      int Line = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_LINEFROMPOSITION, NewCurPos);
+      long LineLength = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_LINELENGTH, Line);
+      char *Buf = new char[LineLength + 1];
+      SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETLINE, Line, (LPARAM) Buf);
+      Buf [LineLength] = 0;
+      long Offset = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_POSITIONFROMLINE, Line);
+      char *WordFound = GetWordAt (NewCurPos, Buf, Offset);
+      if (!WordFound || !*WordFound)
+        {
+          if (WordNearCursorProtection)
+            RecheckNeeded = TRUE;
+          LastCurPos = NewCurPos;
+          WordNearCursorProtection = FALSE;
+          if (RecheckNeeded)
+            RecheckVisible ();
+          break;
+        }
+      long Pos = WordFound - Buf + Offset;
+      long PosEnd = Pos + strlen (WordFound);
+      if (LastCurPos < Pos || LastCurPos > PosEnd)
+      {
+        if (WordNearCursorProtection)
+          RecheckNeeded = TRUE;
+        WordNearCursorProtection = FALSE;
+      }
+
+      LastCurPos = NewCurPos;
+      if (RecheckNeeded)
+        RecheckVisible ();
+    }
+    else
+      WordNearCursorProtection = FALSE;
     break;
     /*
     case EID_APPLYMENUACTION:
@@ -1995,7 +2054,7 @@ BOOL SpellChecker::GetWordUnderCursorIsRight (long &Pos, long &Length, BOOL UseT
 char *SpellChecker::GetWordAt (long CharPos, char *Text, long Offset)
 {
   char *UsedText = 0;
-  if (!DelimUtf8)
+  if (!DelimUtf8 || !*Text)
     return 0;
 
   wchar_t *ConvertedText = 0;
@@ -2007,16 +2066,22 @@ char *SpellChecker::GetWordAt (long CharPos, char *Text, long Offset)
   switch (CurrentEncoding)
   {
   case ENCODING_UTF8:
+    if (!*Iterator || Utf8chr ( DelimUtf8Converted, Iterator))
+      Iterator = (char *) Utf8Dec (Text, Iterator);
+
     while ((!Utf8chr ( DelimUtf8Converted, Iterator)) && Text < Iterator)
       Iterator = (char *) Utf8Dec (Text, Iterator);
     break;
   case ENCODING_ANSI:
+    if (!*Iterator || strchr (DelimConverted, *Iterator))
+      Iterator--;
+
     while (!strchr (DelimConverted, *Iterator) && Text < Iterator)
       Iterator--;
     break;
   case ENCODING_WCHAR:
     SetStringSUtf8Safe (ConvertedText, Text, Indexation);
-    for (unsigned int i = 0; i < wcslen (ConvertedText); i++)
+    for (unsigned int i = 0; i <= wcslen (ConvertedText); i++)
     {
       if (Indexation[i] >= (unsigned int) (Iterator - Text))
       {
@@ -2024,6 +2089,11 @@ char *SpellChecker::GetWordAt (long CharPos, char *Text, long Offset)
         break;
       }
     }
+
+    if (!ConvertedText[index] || wcschr (DelimConvertedWchar, ConvertedText[index]))
+      {
+        index--;
+      }
 
     while (!wcschr (DelimConvertedWchar, ConvertedText[index]) && index > 0)
     {
@@ -2064,6 +2134,8 @@ char *SpellChecker::GetWordAt (long CharPos, char *Text, long Offset)
   case ENCODING_WCHAR:
     {
       wchar_t *WcharRes = (wchar_t *) DoCommonStringTokenization ((char *) (ConvertedText + index), &Context);
+
+
       Res = Text + Indexation [WcharRes - ConvertedText];
       Text[Indexation [WcharRes + wcslen (WcharRes) - ConvertedText]] = '\0';
     }
@@ -2540,6 +2612,7 @@ void SpellChecker::SaveSettings ()
   SaveToIni (_T ("Proxy_Port"), ProxyPort, 808);
   SaveToIni (_T ("Proxy_Is_Anonymous"), ProxyAnonymous, TRUE);
   SaveToIni (_T ("Proxy_Type"), ProxyType, 0);
+  SaveToIni (_T ("Recheck_Prevention_Type"), RecheckPreventionType, 0);
   std::map<TCHAR *, DWORD, bool ( *)(TCHAR *, TCHAR *)>::iterator it = SettingsToSave->begin ();
   for (; it != SettingsToSave->end (); ++it)
   {
@@ -2674,6 +2747,8 @@ void SpellChecker::LoadSettings ()
   LoadFromIni (ProxyPort, _T ("Proxy_Port"), 808);
   LoadFromIni (ProxyAnonymous, _T ("Proxy_Is_Anonymous"), TRUE);
   LoadFromIni (ProxyType, _T ("Proxy_Type"), 0);
+  LoadFromIni (Value, _T ("Recheck_Prevention_Type"), 0);
+  RecheckPreventionType = (RecheckPreventionTypes::e) Value;
 }
 
 void SpellChecker::CreateWordUnderline (HWND ScintillaWindow, int start, int end)
@@ -2960,6 +3035,11 @@ void SpellChecker::SetDelimiters (const char *Str)
   CLEAN_AND_ZERO_ARR (TargetBuf);
 }
 
+void SpellChecker::SetRecheckPreventionType (RecheckPreventionTypes::e Value)
+{
+  RecheckPreventionType = Value;
+}
+
 void SpellChecker::SetDelimiterException (const char *Str)
 {
   TCHAR *DestBuf = 0;
@@ -3174,6 +3254,9 @@ BOOL SpellChecker::CheckWord (char *Word, long Start, long End)
 {
   BOOL res = FALSE;
   if (!CurrentSpeller->IsWorking () || !Word || !*Word)
+    return TRUE;
+
+  if (Start <= LastCurPos && LastCurPos <= End && WordNearCursorProtection && RecheckPreventionType == RecheckPreventionTypes::FIREFOX_LIKE)
     return TRUE;
   // Well Numbers have same codes for ANSI and Unicode I guess, so
   // If word contains number then it's probably just a number or some crazy name
@@ -3419,7 +3502,7 @@ BOOL SpellChecker::CheckText (char *InputText, long Offset, CheckTextMode Mode)
   char *token;
   BOOL stop = FALSE;
   long ResultingWordEnd = -1, ResultingWordStart = -1;
-  long TextLen = strlen (TextToCheck);
+  long TextLen = strlen (InputText);
   std::vector<long> UnderlineBuffer;
   long WordStart = 0;
   long WordEnd = 0;

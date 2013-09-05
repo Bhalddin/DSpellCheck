@@ -612,6 +612,12 @@ void AdvancedDlg::SetDelimiterMode (int DelimMode)
   ComboBox_SetCurSel (HDelimiterStyle, DelimMode);
 }
 
+void AdvancedDlg::SetRecheckPreventionType (int Value)
+{
+  ComboBox_SetCurSel (HRecheckPreventionType, Value);
+  RenewRecheckDelayDisability ();
+}
+
 void AdvancedDlg::FillDelimiters (SpellChecker *SpellCheckerInstance, BOOL FillWithDefault)
 {
   TCHAR *TBuf = 0;
@@ -676,6 +682,11 @@ const TCHAR *const IndicNames[] = {_T ("Plain"), _T ("Squiggle"), _T ("TT"), _T 
   _T ("Box"), _T ("Round Box"), _T ("Straight Box"), _T ("Dash"),
   _T ("Dots"), _T ("Squiggle Low")};
 
+void AdvancedDlg::RenewRecheckDelayDisability ()
+{
+  EnableWindow (HRecheckDelay, (RecheckPreventionTypes::e) ComboBox_GetCurSel (HRecheckPreventionType) == RecheckPreventionTypes::DELAY_BASED);
+}
+
 BOOL CALLBACK AdvancedDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
   TCHAR *EndPtr = 0;
@@ -705,6 +716,7 @@ BOOL CALLBACK AdvancedDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
       HSliderTransparency = ::GetDlgItem (_hSelf, IDC_SLIDER_TRANSPARENCY);
       HBufferSize = ::GetDlgItem (_hSelf, IDC_BUFFER_SIZE);
       HDelimiterStyle = ::GetDlgItem (_hSelf, IDC_DELIMITER_STYLE);
+      HRecheckPreventionType = ::GetDlgItem (_hSelf, IDC_RECHECK_PREVENTION_TYPE);
       SendMessage (HSliderSize, TBM_SETRANGE, TRUE, MAKELPARAM (5, 22));
       SendMessage (HSliderTransparency, TBM_SETRANGE, TRUE, MAKELPARAM (5, 100));
 
@@ -719,8 +731,11 @@ BOOL CALLBACK AdvancedDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
       CreateToolTip (IDC_REMOVE_ENDING_APOSTROPHE, _hSelf, _T ("Words like this are mostly mean plural possessive form in English, if you want to add such forms of words to dictionary manually, please uncheck"));
 
       ComboBox_AddString (HDelimiterStyle, _T ("Only specified symbols (plus \\r, \\n, \\t and spaces)"));
-      ComboBox_AddString (HDelimiterStyle, _T ("All non-letter, non-numeric symbols, except specified"));
+      ComboBox_AddString (HDelimiterStyle, _T ("All symbols except letters, numbers and ones specified"));
       ComboBox_SetCurSel (HDelimiterStyle, 0);
+      ComboBox_AddString (HRecheckPreventionType, _T ("Firefox-like"));
+      ComboBox_AddString (HRecheckPreventionType, _T ("Delay based"));
+      ComboBox_SetCurSel (HRecheckPreventionType, 0);
       ComboBox_ResetContent (HUnderlineStyle);
       for (int i = 0; i < countof (IndicNames); i++)
         ComboBox_AddString (HUnderlineStyle, IndicNames[i]);
@@ -803,6 +818,9 @@ BOOL CALLBACK AdvancedDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
       {
         SendEvent (EID_DELIM_MODE_CHANGE);
       }
+      break;
+    case IDC_RECHECK_PREVENTION_TYPE:
+      RenewRecheckDelayDisability ();
       break;
     case IDC_BUFFER_SIZE:
       if (HIWORD (wParam) == EN_CHANGE)
@@ -904,6 +922,8 @@ void AdvancedDlg::ApplySettings (SpellChecker *SpellCheckerInstance)
         SpellCheckerInstance->SetDelimiterException (BufUtf8);
         break;
     }
+
+  SpellCheckerInstance->SetRecheckPreventionType ((RecheckPreventionTypes::e) ComboBox_GetCurSel (HRecheckPreventionType));
 
   CLEAN_AND_ZERO_ARR (BufUtf8);
   CLEAN_AND_ZERO_ARR (TBuf);

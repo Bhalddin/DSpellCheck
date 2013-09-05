@@ -130,7 +130,7 @@ public:
   void SetDelimiterMode (int mode);
   const char *GetDelimiters ();
   const char *GetDelimiterException ();
-  long PreviousA, PreviousB;
+  void SetRecheckPreventionType (RecheckPreventionTypes::e Value);
 
 private:
   enum CheckTextMode
@@ -169,7 +169,7 @@ private:
   void InitSuggestionsBox ();
   BOOL GetWordUnderCursorIsRight (long &Pos, long &Length, BOOL UseTextCursor = FALSE);
   void SetSuggestionsBoxTransparency ();
-  char *GetWordAt (long CharPos, char *Text, long Offset);
+  char *GetWordAt (long CharPos, char *Text, long Offset); // Fuzzy means that if cursor in the end of word the word still will be found.
   void SetDefaultDelimiters ();
   void HideSuggestionBox ();
   void GetLimitsAndRecheckModified ();
@@ -260,6 +260,8 @@ private:
   int ProxyPort;
   TCHAR *ProxyPassword;
   int DelimiterMode;
+  BOOL WordNearCursorProtection;
+  long LastCurPos;
 
   int Lexer;
   std::vector <SuggestionsMenuItem *> *SuggestionMenuItems;
@@ -281,6 +283,7 @@ private:
   long VisibleTextOffset;
   BOOL RemoveUserDics;
   BOOL RemoveSystem;
+  RecheckPreventionTypes::e RecheckPreventionType;
 
   AbstractSpellerInterface *CurrentSpeller;
   AspellInterface *AspellSpeller;
@@ -292,5 +295,6 @@ private:
   char *yoANSI;
   char *yeANSI;
   char *PunctuationApostropheANSI;
+  long PreviousA, PreviousB;
 };
 #endif // SPELLCHECKER_H

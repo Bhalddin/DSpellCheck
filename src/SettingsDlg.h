@@ -103,9 +103,11 @@ public:
   void SetSuggBoxSettings (int Size, int Trans);
   void SetUnderlineSettings (int Color, int Style);
   void SetDelimiterMode (int DelimMode);
+  void SetRecheckPreventionType (int Value);
   void SetIgnore (BOOL IgnoreNumbersArg, BOOL IgnoreCStartArg, BOOL IgnoreCHaveArg, BOOL IgnoreCAllArg, BOOL Ignore_Arg,
     BOOL Ignore_SA_Apostrophe_Arg, BOOL IgnoreOneLetter);
   void SetBufferSize (int Size);
+  void RenewRecheckDelayDisability ();
 
 protected:
   __override virtual BOOL CALLBACK run_dlgProc (UINT message, WPARAM wParam, LPARAM lParam);
@@ -130,6 +132,7 @@ private:
   HWND HBufferSize;
   HWND HRemoveBoundaryApostrophes;
   HWND HDelimiterStyle;
+  HWND HRecheckPreventionType;
 
   HBRUSH Brush;
   NppData NppDataInstance;

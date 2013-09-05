@@ -60,6 +60,15 @@ namespace DelimiterModes
     };
 }
 
+namespace RecheckPreventionTypes
+{
+  enum e
+  {
+    FIREFOX_LIKE,
+    DELAY_BASED
+  };
+}
+
 struct MessageBoxInfo
 {
   HWND hWnd;
