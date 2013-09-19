@@ -111,21 +111,48 @@ public:
   }
 };
 
+class hash_compare_wchars_icase
+{
+public:
+  enum
+  {
+    min_buckets = 1,
+    bucket_size = 1,
+  };
+
+  size_t operator() (wchar_t a) const
+  {
+    stdext::hash<wchar_t> hash_fn;
+    return hash_fn (a);
+  }
+
+  bool operator()(wchar_t a, wchar_t b) const
+  {
+    return towupper (a) < towupper (b);
+  }
+};
+
 #define SUGGESTIONS_BOX 0
 #define SUGGESTIONS_CONTEXT_MENU 1
 
 // Global Menu ID
-// TODO: change it all to call for n++ message which gives you free menu IDs
 #define DSPELLCHECK_MENU_ID 193
 #define LANGUAGE_MENU_ID 197
 
-// Menu item IDs
+// Context Menu item IDs
 #define MID_ADDTODICTIONARY 101
 #define MID_IGNOREALL 102
-#define MULTIPLE_LANGS 201
-#define CUSTOMIZE_MULTIPLE_DICS 202
-#define DOWNLOAD_DICS 203
-#define REMOVE_DICS 204
+
+#define MID_ADD_TO_DICS_START MID_IGNOREALL + 1
+
+// Language menu item ids
+#define MULTIPLE_LANGS 101
+#define CUSTOMIZE_MULTIPLE_DICS 102
+#define DOWNLOAD_DICS 103
+#define REMOVE_DICS 104
+
+#define MENU_IDS_TOTAL 350
+#define CONTEXT_MENU_IDS_TOTAL 200
 
 #define USER_SERVER_CONST 100
 

@@ -31,7 +31,7 @@ public:
   void SetMode (int Multi) { MultiMode = Multi; }                         // Multi - 1, Single - 0
   void SetEncoding (EncodingType Encoding) {CurrentEncoding = Encoding; }
   virtual BOOL CheckWord (char *Word) = 0;                         // Word in Utf-8 or ANSI
-  virtual std::vector<char *> *GetSuggestions (char *Word) = 0;
+  virtual std::vector<wchar_t *> *GetSuggestions (char *Word) = 0;
   virtual void AddToDictionary (char *Word) = 0;
   virtual void IgnoreAll (char *Word) = 0;
   virtual BOOL IsWorking () = 0;

@@ -113,23 +113,24 @@ void AspellInterface::SetMultipleLanguages (std::vector<TCHAR *> *List)
   }
 }
 
-static void FilleVectorFromAspellWordList (const AspellWordList *WordList, std::vector<char *> *TargetVector)
+static void FilleVectorFromAspellWordList (const AspellWordList *WordList, std::vector<wchar_t *> *TargetVector)
 {
   AspellStringEnumeration *els = aspell_word_list_elements(WordList);
   const char *Suggestion;
   while ((Suggestion = aspell_string_enumeration_next(els)) != 0)
   {
-    char *Buf = 0;
-    SetString (Buf, Suggestion);
+    wchar_t *Buf = 0;
+    SetStringSUtf8 (Buf, Suggestion);
     TargetVector->push_back (Buf);
   }
 }
 
-std::vector<char *> *AspellInterface::GetSuggestions (char *Word)
+std::vector<wchar_t *> *AspellInterface::GetSuggestions (char *Word)
 {
   const AspellWordList *WordList = 0, *CurWordList = 0;
 
   char *TargetWord = 0;
+  wchar_t *TargetWordWChar = 0;
 
   switch (CurrentEncoding)
   {
@@ -144,9 +145,9 @@ std::vector<char *> *AspellInterface::GetSuggestions (char *Word)
     break;
   }
 
+  SetStringSUtf8 (TargetWordWChar, TargetWord);
 
-
-  std::vector<char *> *SuggList = new std::vector<char *>;
+  std::vector<wchar_t *> *SuggList = new std::vector<wchar_t *>;
   if (!MultiMode)
   {
     LastSelectedSpeller = SingularSpeller;
@@ -167,7 +168,7 @@ std::vector<char *> *AspellInterface::GetSuggestions (char *Word)
       FilleVectorFromAspellWordList (CurWordList, SuggList);
     }
     StripEqualElements (SuggList);
-    SortStringVectorByDamerauLevenshteinDistanceUtf8 (SuggList, TargetWord);
+    SortStringVectorByDamerauLevenshteinDistanceWchar (SuggList, TargetWordWChar);
   }
 
   TCHAR *Buf = 0;
@@ -184,6 +185,7 @@ std::vector<char *> *AspellInterface::GetSuggestions (char *Word)
     CLEAN_AND_ZERO_ARR (TargetWord);
     break;
   }
+  CLEAN_AND_ZERO_ARR (TargetWordWChar);
 
   return SuggList;
 }

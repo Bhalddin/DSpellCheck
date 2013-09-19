@@ -68,7 +68,7 @@ public:
   __override virtual void SetMultipleLanguages (std::vector<TCHAR *> *List); // Languages are from LangList
   __override virtual BOOL CheckWord (char *Word); // Word in Utf-8 or ANSI
   __override virtual BOOL IsWorking ();
-  __override virtual std::vector<char *> *GetSuggestions (char *Word);
+  __override virtual std::vector<wchar_t *> *GetSuggestions (char *Word);
   __override virtual void AddToDictionary (char *Word);
   __override virtual void IgnoreAll (char *Word);
 

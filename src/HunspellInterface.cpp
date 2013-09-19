@@ -667,9 +667,9 @@ void HunspellInterface::IgnoreAll (char *Word)
   Ignored->insert (Buf);
 }
 
-std::vector<char *> *HunspellInterface::GetSuggestions (char *Word)
+std::vector<wchar_t *> *HunspellInterface::GetSuggestions (char *Word)
 {
-  std::vector<char *> *SuggList = new std::vector<char *>;
+  std::vector<wchar_t *> *SuggList = new std::vector<wchar_t *>;
   int Num = -1;
   int CurNum;
   char **HunspellList = 0;
@@ -735,8 +735,8 @@ std::vector<char *> *HunspellInterface::GetSuggestions (char *Word)
 
   for (int i = 0; i < Num; i++)
   {
-    char *Buf = 0;
-    SetString (Buf, GetConvertedWord (HunspellList[i], LastSelectedSpeller.BackConverterUTF8));
+    wchar_t *Buf = 0;
+    SetString (Buf, (wchar_t *) GetConvertedWord (HunspellList[i], LastSelectedSpeller.BackConverterWCHAR));
     SuggList->push_back (Buf);
   }
 
@@ -745,6 +745,7 @@ std::vector<char *> *HunspellInterface::GetSuggestions (char *Word)
   CLEAN_AND_ZERO_ARR (WordUtf8);
 
   return SuggList;
+  return 0; // TODO: Fix
 }
 
 void HunspellInterface::SetDirectory (TCHAR *Dir)

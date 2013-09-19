@@ -265,7 +265,7 @@ private:
 
   int Lexer;
   std::vector <SuggestionsMenuItem *> *SuggestionMenuItems;
-  std::vector <char *> *LastSuggestions;
+  std::vector <wchar_t *> *LastSuggestions;
   _locale_t  utf8_l;
   long ModifiedStart;
   long ModifiedEnd;

@@ -71,8 +71,9 @@ bool SortCompareChars (char *a, char *b);
 BOOL CheckForDirectoryExistence (TCHAR *Path, BOOL Silent = TRUE, HWND NppWindow = 0);
 TCHAR *GetLastSlashPosition (TCHAR *Path);
 void SortStringVectorByLevenshteinDistanceUtf8 (std::vector <char *> *Vector, char *Word);
-void SortStringVectorByDamerauLevenshteinDistanceUtf8 (std::vector <char *> *Vector, char *Word);;
-void StripEqualElements (std::vector <char *> *&Vector); // Warning - changes pointer, vector order is being spoiled in process
+void SortStringVectorByDamerauLevenshteinDistanceUtf8 (std::vector <char *> *Vector, char *Word);
+void SortStringVectorByDamerauLevenshteinDistanceWchar (std::vector <wchar_t *> *Vector, wchar_t *Word);
+void StripEqualElements (std::vector <wchar_t *> *&Vector); // Warning - changes pointer, vector order is being spoiled in process
 char *strtok_s_nonalnum (char *s1, const char *delimit, char **context);
 wchar_t *wcstok_s_nonalnum (wchar_t *s1, const wchar_t *delimit, wchar_t **context);
 

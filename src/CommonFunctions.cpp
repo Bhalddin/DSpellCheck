@@ -580,6 +580,11 @@ bool SortCompareChars (char *a, char *b)
   return strcmp (a, b) < 0;
 }
 
+bool SortCompareWChars (wchar_t *a, wchar_t *b)
+{
+  return wcscmp (a, b) < 0;
+}
+
 const TCHAR *const AliasesFrom[] = {_T ("af_Za"), _T ("ak_GH"), _T ("bg_BG"), _T ("ca_ANY"), _T ("ca_ES"), _T ("cop_EG"), _T ("cs_CZ"), _T ("cy_GB"), _T ("da_DK"), _T ("de_AT"), _T ("de_CH"), _T ("de_DE"),
   _T ("de_DE_comb"), _T ("de_DE_frami"), _T ("de_DE_neu"), _T ("el_GR"), _T ("en_AU"), _T ("en_CA"), _T ("en_GB"), _T ("en_GB-oed"), _T ("en_NZ"), _T ("en_US"), _T ("en_ZA"), _T ("eo_EO"), _T ("es_AR"),
   _T ("es_BO"), _T ("es_CL"), _T ("es_CO"), _T ("es_CR"), _T ("es_CU"), _T ("es_DO"), _T ("es_EC"), _T ("es_ES"), _T ("es_GT"), _T ("es_HN"), _T ("es_MX"), _T ("es_NEW"), _T ("es_NI"), _T ("es_PA"), _T ("es_PE"),
@@ -832,6 +837,84 @@ static int DamerauLevenshteinDistanceUtf8 (char *Source, char *Target)
   return Result;
 }
 
+static int DamerauLevenshteinDistanceWchar (wchar_t *Source, wchar_t *Target)
+{
+  // Hopefully only one memory allocation (which is good)
+  size_t SourceLength = wcslen (Source);
+  size_t TargetLength = wcslen (Target);
+  if (Source == 0 || *Source == 0)
+  {
+    if (Target == 0 || *Target == 0)
+    {
+      return 0;
+    }
+    else
+    {
+      return TargetLength;
+    }
+  }
+  else if (Target == 0 || *Target == 0)
+  {
+    return SourceLength;
+  }
+
+  int W = (SourceLength + 2);
+  int H = (TargetLength + 2);
+  int *Score = new int[(SourceLength + 2) * (TargetLength + 2)];
+
+  int Inf = SourceLength + TargetLength;
+  Score[0] = Inf;
+  for (size_t i = 0; i <= SourceLength; i++) { Score[(i + 1) * H + 1] = i; Score [(i + 1) * H + 0] = Inf; }
+  for (size_t j = 0; j <= TargetLength; j++) { Score[1 * H + (j + 1)] = j; Score [0 * H + (j + 1)] = Inf; }
+
+  stdext::hash_map <wchar_t, int, hash_compare_wchars_icase> Sd;
+
+  wchar_t *Iterators[2] = {Source, Target};
+  for (int i = 0; i < countof (Iterators); i++)
+  {
+    while (TRUE)
+    {
+      wchar_t Char; // TODO:Rename
+      if (!*Iterators[i])
+        break;
+      Char = *Iterators[i];
+      if (Sd.find (Char) == Sd.end ())
+        Sd[Char] = 0;
+      Iterators[i]++;
+    }
+  }
+
+  wchar_t *SourceIterator = Source;
+  for (size_t i = 1; i <= SourceLength; i++, SourceIterator++)
+  {
+    int DB = 0;
+    wchar_t *TargetIterator = Target;
+    for (size_t j = 1; j <= TargetLength; j++, TargetIterator++)
+    {
+      int i1 = Sd[*TargetIterator];
+      int j1 = DB;
+
+      if (Source[i - 1] == Target[j - 1])
+      {
+        Score[(i + 1) * H + (j + 1)] = Score[i * H + j];
+        DB = j;
+      }
+      else
+      {
+        Score[(i + 1) * H + (j + 1)] = std::min<int> (Score[i * H + j], std::min<int> (Score[(i + 1) * H + j], Score[i * H + (j + 1)])) + 1;
+      }
+
+      Score[(i + 1) * H + (j + 1)] = std::min<int> (Score[(i + 1) * H + (j + 1)], Score[i1 * H + j1] + (i - i1 - 1) + 1 + (j - j1 - 1));
+    }
+    Sd[*SourceIterator] = i;
+  }
+
+  int Result = Score[(SourceLength + 1) * H  + (TargetLength + 1)];
+  CLEAN_AND_ZERO_ARR (Score);
+
+  return Result;
+}
+
 class LevenshteinSortComparatorUtf8
 {
 public:
@@ -854,6 +937,17 @@ public:
   }
 };
 
+class DamerauLevenshteinSortComparatorWchar
+{
+public:
+  wchar_t * T;
+  DamerauLevenshteinSortComparatorWchar (wchar_t *TArg) { T = TArg; }
+  bool operator()(wchar_t *S1, wchar_t *S2)
+  {
+    return (DamerauLevenshteinDistanceWchar (S1, T) < DamerauLevenshteinDistanceWchar (S2, T));
+  }
+};
+
 void SortStringVectorByLevenshteinDistanceUtf8 (std::vector <char *> *Vector, char *Word)
 {
   std::sort (Vector->begin (), Vector->end (), LevenshteinSortComparatorUtf8 (Word));
@@ -864,19 +958,25 @@ void SortStringVectorByDamerauLevenshteinDistanceUtf8 (std::vector <char *> *Vec
   std::sort (Vector->begin (), Vector->end (), DamerauLevenshteinSortComparatorUtf8 (Word));
 }
 
-void StripEqualElements (std::vector <char *> *&Vector)
+void SortStringVectorByDamerauLevenshteinDistanceWchar (std::vector <wchar_t *> *Vector, wchar_t *Word)
 {
-  std::sort (Vector->begin (), Vector->end (), SortCompareChars);
-  std::vector <char *> *NewVector = new std::vector <char *>;
+  std::sort (Vector->begin (), Vector->end (), DamerauLevenshteinSortComparatorWchar (Word));
+}
+
+
+void StripEqualElements (std::vector <wchar_t *> *&Vector)
+{
+  std::sort (Vector->begin (), Vector->end (), SortCompareWChars);
+  std::vector <wchar_t *> *NewVector = new std::vector <wchar_t *>;
   for (size_t i = 0; i < Vector->size (); i++)
   {
-    if (i == 0 || strcmp (Vector->at (i), Vector->at (i - 1)) != 0)
+    if (i == 0 || wcscmp (Vector->at (i), Vector->at (i - 1)) != 0)
       NewVector->push_back (Vector->at (i));
   }
 
   for (size_t i = 1; i < Vector->size (); i++)
   {
-    if (strcmp (Vector->at (i), Vector->at (i - 1)) == 0)
+    if (wcscmp (Vector->at (i), Vector->at (i - 1)) == 0)
       delete [] Vector->at (i);
   }
   CLEAN_AND_ZERO (Vector);

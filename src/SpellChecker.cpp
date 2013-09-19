@@ -107,9 +107,9 @@ SpellChecker::SpellChecker (const TCHAR *IniFilePathArg, SettingsDlg *SettingsDl
   {
     SetUseAllocatedIds (TRUE);
     int Id;
-    SendMsgToNpp (NppDataInstance, NPPM_ALLOCATECMDID, 350, (LPARAM) &Id);
+    SendMsgToNpp (NppDataInstance, NPPM_ALLOCATECMDID, MENU_IDS_TOTAL, (LPARAM) &Id);
     SetContextMenuIdStart (Id);
-    SetLangsMenuIdStart (Id + 103);
+    SetLangsMenuIdStart (Id + CONTEXT_MENU_IDS_TOTAL + 1);
   }
 }
 
@@ -625,20 +625,20 @@ BOOL WINAPI SpellChecker::NotifyEvent (DWORD Event)
 
   case EID_EDITING_DONE:
     if (RecheckPreventionType == RecheckPreventionTypes::FIREFOX_LIKE)
-      {
-        BOOL RecheckNeeded = FALSE;
-        if (!WordNearCursorProtection)
-          RecheckNeeded = TRUE;
+    {
+      BOOL RecheckNeeded = FALSE;
+      if (!WordNearCursorProtection)
+        RecheckNeeded = TRUE;
 
-        WordNearCursorProtection = TRUE;
-        if (RecheckNeeded)
-          RecheckVisible ();
-      }
+      WordNearCursorProtection = TRUE;
+      if (RecheckNeeded)
+        RecheckVisible ();
+    }
     else
       WordNearCursorProtection = FALSE;
 
-  LastCurPos = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETCURRENTPOS);
-  // break;
+    LastCurPos = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETCURRENTPOS);
+    // break;
 
   case EID_SELECTION_CHANGED:
     if (RecheckPreventionType == RecheckPreventionTypes::FIREFOX_LIKE)
@@ -653,15 +653,15 @@ BOOL WINAPI SpellChecker::NotifyEvent (DWORD Event)
       long Offset = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_POSITIONFROMLINE, Line);
       char *WordFound = GetWordAt (NewCurPos, Buf, Offset);
       if (!WordFound || !*WordFound)
-        {
-          if (WordNearCursorProtection)
-            RecheckNeeded = TRUE;
-          LastCurPos = NewCurPos;
-          WordNearCursorProtection = FALSE;
-          if (RecheckNeeded)
-            RecheckVisible ();
-          break;
-        }
+      {
+        if (WordNearCursorProtection)
+          RecheckNeeded = TRUE;
+        LastCurPos = NewCurPos;
+        WordNearCursorProtection = FALSE;
+        if (RecheckNeeded)
+          RecheckVisible ();
+        break;
+      }
       long Pos = WordFound - Buf + Offset;
       long PosEnd = Pos + strlen (WordFound);
       if (LastCurPos < Pos || LastCurPos > PosEnd)
@@ -2091,9 +2091,9 @@ char *SpellChecker::GetWordAt (long CharPos, char *Text, long Offset)
     }
 
     if (!ConvertedText[index] || wcschr (DelimConvertedWchar, ConvertedText[index]))
-      {
-        index--;
-      }
+    {
+      index--;
+    }
 
     while (!wcschr (DelimConvertedWchar, ConvertedText[index]) && index > 0)
     {
@@ -2203,7 +2203,7 @@ void SpellChecker::ProcessMenuResult (UINT MenuId)
 {
   if ((!GetUseAllocatedIds () && HIBYTE (MenuId) != DSPELLCHECK_MENU_ID &&
        HIBYTE (MenuId) != LANGUAGE_MENU_ID)
-      || (GetUseAllocatedIds () && ((int) MenuId < GetContextMenuIdStart () || (int) MenuId > GetContextMenuIdStart () + 350)))
+      || (GetUseAllocatedIds () && ((int) MenuId < GetContextMenuIdStart () || (int) MenuId > GetContextMenuIdStart () + MENU_IDS_TOTAL)))
     return;
   OutputDebugString (_T ("Processing Menu Result\n"));
   int UsedMenuId = 0;
@@ -2249,9 +2249,9 @@ void SpellChecker::ProcessMenuResult (UINT MenuId)
         else if ((unsigned int)Result <= LastSuggestions->size ())
         {
           if (CurrentEncoding == ENCODING_ANSI)
-            SetStringSUtf8 (AnsiBuf, LastSuggestions->at (Result - 1));
-          else
             SetString (AnsiBuf, LastSuggestions->at (Result - 1));
+          else
+            SetStringDUtf8 (AnsiBuf, LastSuggestions->at (Result - 1));
           /*
           if (SuggestionsMode == SUGGESTIONS_CONTEXT_MENU)
           {
@@ -2319,14 +2319,7 @@ void SpellChecker::FillSuggestionsMenu (HMENU Menu)
   Range.chrg.cpMax = WUCPosition + WUCLength;
   Range.lpstrText = new char [WUCLength + 1];
   PostMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETSEL, Pos, Pos + WUCLength);
-  if (SuggestionsMode == SUGGESTIONS_BOX)
-  {
-    // PostMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETSEL, Pos, Pos + WUCLength);
-  }
-  else
-  {
-    SuggestionMenuItems = new std::vector <SuggestionsMenuItem *>;
-  }
+  SuggestionMenuItems = new std::vector <SuggestionsMenuItem *>;
 
   SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETTEXTRANGE, 0, (LPARAM) &Range);
 
@@ -2355,20 +2348,12 @@ void SpellChecker::FillSuggestionsMenu (HMENU Menu)
   {
     if (i >= (unsigned int) SuggestionsNum)
       break;
-    SetStringSUtf8 (Buf, LastSuggestions->at (i));
-    if (SuggestionsMode == SUGGESTIONS_BOX)
-      InsertSuggMenuItem (Menu, Buf, i + 1, -1);
-    else
-      SuggestionMenuItems->push_back (new SuggestionsMenuItem (Buf, i + 1));
+    // TODO: ANSI Version wouldn't work here
+    SuggestionMenuItems->push_back (new SuggestionsMenuItem (LastSuggestions->at (i), i + 1));
   }
 
   if (LastSuggestions->size () > 0)
-  {
-    if (SuggestionsMode == SUGGESTIONS_BOX)
-      InsertSuggMenuItem (Menu, _T(""), 0, 103, TRUE);
-    else
-      SuggestionMenuItems->push_back (new SuggestionsMenuItem (_T (""), 0, TRUE));
-  }
+    SuggestionMenuItems->push_back (new SuggestionsMenuItem (_T (""), 0, TRUE));
 
   TCHAR *MenuString = new TCHAR [WUCLength + 50 + 1]; // Add "" to dictionary
   char *BufUtf8 = 0;
@@ -2384,19 +2369,24 @@ void SpellChecker::FillSuggestionsMenu (HMENU Menu)
   }
   ApplyConversions (BufUtf8);
   SetStringSUtf8 (Buf, BufUtf8);
+  // TODO: make custom ignore list for aspell
   _stprintf (MenuString, _T ("Ignore \"%s\" for Current Session"), Buf);
-  if (SuggestionsMode == SUGGESTIONS_BOX)
-    InsertSuggMenuItem (Menu, MenuString, MID_IGNOREALL, -1);
-  else
-    SuggestionMenuItems->push_back (new SuggestionsMenuItem (MenuString, MID_IGNOREALL));
+  SuggestionMenuItems->push_back (new SuggestionsMenuItem (MenuString, MID_IGNOREALL));
   _stprintf (MenuString, _T ("Add \"%s\" to Dictionary"), Buf);
-  if (SuggestionsMode == SUGGESTIONS_BOX)
-    InsertSuggMenuItem (Menu, MenuString, MID_ADDTODICTIONARY, -1);
-  else
-    SuggestionMenuItems->push_back (new SuggestionsMenuItem (MenuString, MID_ADDTODICTIONARY));
+  SuggestionMenuItems->push_back (new SuggestionsMenuItem (MenuString, MID_ADDTODICTIONARY));
 
   if (SuggestionsMode == SUGGESTIONS_CONTEXT_MENU)
     SuggestionMenuItems->push_back (new SuggestionsMenuItem (_T (""), 0, TRUE));
+
+  if (SuggestionsMode == SUGGESTIONS_BOX)
+  {
+    for (unsigned int i = 0; i < SuggestionMenuItems->size (); i++)
+    {
+      InsertSuggMenuItem (Menu, SuggestionMenuItems->at (i)->Text, SuggestionMenuItems->at (i)->Id, i, SuggestionMenuItems->at (i)->Separator);
+      CLEAN_AND_ZERO (SuggestionMenuItems->at (i));
+    }
+    CLEAN_AND_ZERO (SuggestionMenuItems);
+  }
 
   CLEAN_AND_ZERO_ARR (Range.lpstrText);
   CLEAN_AND_ZERO_ARR (Buf);
