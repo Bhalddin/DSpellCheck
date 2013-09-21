@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "HunspellInterface.h"
 
 #include "Aspell.h"
+#include "DicOptions.h"
 #include "DownloadDicsDlg.h"
 #include "iconv.h"
 #include "CommonFunctions.h"
@@ -37,7 +38,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "Scintilla.h"
 #include "SelectProxy.h"
 #include "Suggestions.h"
-
 
 SpellChecker::SpellChecker (const TCHAR *IniFilePathArg, SettingsDlg *SettingsDlgInstanceArg, NppData *NppDataInstanceArg,
                             Suggestions *SuggestionsInstanceArg, LangList *LangListInstanceArg)
@@ -437,7 +437,6 @@ void SpellChecker::FillDialogs (BOOL NoDisplayCall)
   SettingsDlgInstance->GetSimpleDlg ()->SetCheckComments (CheckComments);
   SettingsDlgInstance->GetSimpleDlg ()->SetDecodeNames (DecodeNames);
   SettingsDlgInstance->GetSimpleDlg ()->SetSuggType (SuggestionsMode);
-  SettingsDlgInstance->GetSimpleDlg ()->SetOneUserDic (OneUserDic);
   SettingsDlgInstance->GetAdvancedDlg ()->SetDelimiterMode (DelimiterMode);
   SettingsDlgInstance->GetAdvancedDlg ()->FillDelimiters (this, FALSE);
   SettingsDlgInstance->GetAdvancedDlg ()->SetConversionOpts (IgnoreYo, ConvertSingleQuotes, RemoveBoundaryApostrophes);
@@ -657,6 +656,12 @@ BOOL WINAPI SpellChecker::NotifyEvent (DWORD Event)
 
     LastCurPos = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETCURRENTPOS);
     // break;
+
+  case EID_FILL_DIC_OPTIONS:
+    GetDicOptions ()->Fill (this);
+
+  case EID_COLLECT_DIC_OPTIONS:
+    GetDicOptions ()->Collect (this);
 
   case EID_SELECTION_CHANGED:
     if (RecheckPreventionType == RecheckPreventionTypes::FIREFOX_LIKE)
@@ -2260,7 +2265,11 @@ void SpellChecker::ProcessMenuResult (UINT MenuId)
         else if (Result == MID_ADDTODICTIONARY)
         {
           ApplyConversions (SelectedWord);
-          CurrentSpeller->AddToDictionary (SelectedWord);
+          int DicNum = -1;
+          if (LibMode == 1 && !MultiLangMode && (HunspellDicMode == HunspellDictionaryMode::SeparateForSingle || HunspellDicMode == HunspellDictionaryMode::SeparateForAll))
+            DicNum = 0;
+
+          CurrentSpeller->AddToDictionary (SelectedWord, DicNum);
           SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETSEL, WUCPosition + WUCLength , WUCPosition + WUCLength );
           RecheckVisibleBothViews ();
         }
@@ -2399,7 +2408,13 @@ void SpellChecker::FillSuggestionsMenu (HMENU Menu)
   SuggestionMenuItems->push_back (new SuggestionsMenuItem (MenuString, MID_IGNOREALL));
   _stprintf (MenuString, _T ("Add \"%s\" to Dictionary"), Buf);
   MenuFlagEnum::e flag = MenuFlagEnum::SIMPLE_ITEM;
-  if (LibMode == 0 && _tcscmp (AspellLanguage, _T ("<MULTIPLE>")) == 0)
+  if (
+    MultiLangMode
+    &&
+    (   (LibMode == 0)
+        || (LibMode == 1 && HunspellDicMode == HunspellDictionaryMode::SeparateForAll)
+    )
+  )
   {
     flag = MenuFlagEnum::MENU_PARENT;
   }
@@ -2633,7 +2648,7 @@ void SpellChecker::SaveSettings ()
   PreserveCurrentAddressIndex ();
   SaveToIni (_T ("Last_Used_Address_Index"), LastUsedAddress, 0);
   SaveToIni (_T ("Decode_Language_Names"), DecodeNames, TRUE);
-  SaveToIni (_T ("United_User_Dictionary(Hunspell)"), OneUserDic, FALSE);
+  SaveToIni (_T ("Hunspell_User_Dictionary_Mode"), (int) HunspellDicMode, 1);
 
   SaveToIni (_T ("Use_Proxy"), UseProxy, FALSE);
   SaveToIni (_T ("Proxy_User_Name"), ProxyUserName, _T("anonymous"));
@@ -2655,23 +2670,20 @@ void SpellChecker::SetDecodeNames (BOOL Value)
   DecodeNames = Value;
 }
 
-void SpellChecker::SetOneUserDic (BOOL Value)
+HunspellDictionaryMode::e SpellChecker::GetHunspellDicMode ()
 {
-  OneUserDic = Value;
-  HunspellSpeller->SetUseOneDic (Value);
+  return HunspellDicMode;
 }
 
+void SpellChecker::SetHunspellDicMode (HunspellDictionaryMode::e mode)
+{
+  HunspellDicMode = mode;
+}
 
 void SpellChecker::SetDelimiterMode (int mode)
 {
   DelimiterMode = mode;
 }
-
-BOOL SpellChecker::GetOneUserDic ()
-{
-  return OneUserDic;
-}
-
 void SpellChecker::SetLibMode (int i)
 {
   LibMode = i;
@@ -2739,8 +2751,8 @@ void SpellChecker::LoadSettings ()
   LoadFromIni (IgnoreOneLetter, _T ("Ignore_One_Letter"), 0);
   LoadFromIni (Ignore_, _T ("Ignore_With_"), 1);
   int Value;
-  LoadFromIni (Value, _T ("United_User_Dictionary(Hunspell)"), FALSE);
-  SetOneUserDic (Value);
+  LoadFromIni (Value, _T ("Hunspell_User_Dictionary_Mode"), 1);
+  HunspellDicMode = (HunspellDictionaryMode::e) Value;
   LoadFromIni (IgnoreSEApostrophe, _T ("Ignore_That_Start_or_End_with_'"), 0);
   int i;
 
@@ -3003,10 +3015,12 @@ void SpellChecker::SetAspellLanguage (const TCHAR *Str)
   {
     SetMultipleLanguages (AspellMultiLanguages, AspellSpeller);
     AspellSpeller->SetMode (1);
+    MultiLangMode = 1;
   }
   else
   {
     TCHAR *TBuf = 0;
+    MultiLangMode = 0;
     SetString (TBuf, Str);
     AspellSpeller->SetLanguage (TBuf);
     CLEAN_AND_ZERO_ARR (TBuf);
@@ -3021,10 +3035,12 @@ void SpellChecker::SetHunspellLanguage (const TCHAR *Str)
   if (_tcscmp (Str, _T ("<MULTIPLE>")) == 0)
   {
     SetMultipleLanguages (HunspellMultiLanguages, HunspellSpeller);
+    MultiLangMode = 1;
     HunspellSpeller->SetMode (1);
   }
   else
   {
+    MultiLangMode = 0;
     HunspellSpeller->SetLanguage (HunspellLanguage);
     HunspellSpeller->SetMode (0);
   }

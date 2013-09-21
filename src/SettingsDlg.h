@@ -50,7 +50,6 @@ public:
   int GetSelectedLib ();
   void SetLibMode (int LibMode);
   void SetDecodeNames (BOOL Value);
-  void SetOneUserDic (BOOL Value);
   void ApplyLibChange (SpellChecker *SpellCheckerInstance);
 
 protected:
@@ -77,6 +76,7 @@ private:
   HWND HLibrary;
   HWND HLibGroupBox;
   HWND HDownloadDics;
+  HWND HDictionaryOptions;
   HWND HRemoveDics;
   HWND HDecodeNames;
   HWND HOneUserDic;

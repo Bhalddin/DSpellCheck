@@ -15,6 +15,7 @@
 #define IDB_AUTOCHECK                           141
 #define IDD_DIALOG_SELECT_PROXY                 143
 #define IDB_AUTOCHECK2                          145
+#define IDD_HUNSPELL_DIC_OPTIONS                147
 #define IDC_VERSION                             1000
 #define IDC_IGNORE_ONE_LETTER                   1001
 #define IDC_REMOVE_LANGLIST                     1001
@@ -39,7 +40,6 @@
 #define IDC_BROWSEASPELLPATH                    1007
 #define IDC_HOSTNAME                            1007
 #define IDD_SIMPLE                              1007
-#define IDC_ONE_USER_DIC                        1008
 #define IDC_USERNAME                            1008
 #define IDD_ADVANCED                            1008
 #define IDC_ADDRESS                             1009
@@ -58,14 +58,18 @@
 #define IDC_REMOVE_DICS                         1014
 #define IDC_FILETYPES_CHECKTHOSE                1015
 #define IDC_SELECTPROXY                         1015
+#define IDC_SEPARATE_FOR_ALL                    1015
 #define IDC_FILETYPES_CHECKNOTTHOSE             1016
 #define IDC_PROGRESSBAR                         1016
+#define IDC_SEPARATE_FOR_SINGLE                 1016
 #define IDC_BUFFER_SIZE                         1017
 #define IDC_RESETASPELLPATH                     1017
+#define IDC_UNIFIED_FOR_ALL                     1017
 #define IDC_RESETHUNSPELLPATH                   1018
 #define IDC_ANONYMOUS_LOGIN                     1019
 #define IDC_HUNSPELL_PATH_TYPE                  1019
 #define IDC_IGNORE_NUMBERS                      1019
+#define IDC_DIC_OPTIONS                         1020
 #define IDC_IGNORE_CSTART                       1020
 #define IDC_IGNORE_CHAVE                        1021
 #define IDC_SYSTEMPATH                          1021

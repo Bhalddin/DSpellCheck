@@ -103,8 +103,8 @@ public:
   void SetSuggType (int SuggType);
   void SetLibMode (int i);
   void SetDecodeNames (BOOL Value);
-  void SetOneUserDic (BOOL Value);
-  BOOL GetOneUserDic ();
+  HunspellDictionaryMode::e GetHunspellDicMode ();
+  void SetHunspellDicMode (HunspellDictionaryMode::e mode);
   void SetShowOnlyKnow (BOOL Value);
   void SetInstallSystem (BOOL Value);
   void FillDialogs (BOOL NoDisplayCall = FALSE);
@@ -266,6 +266,7 @@ private:
   BOOL WordNearCursorProtection;
   long LastCurPos;
   std::vector<TCHAR *> *MultiLangList;
+  HunspellDictionaryMode::e HunspellDicMode;
 
   int Lexer;
   std::vector <SuggestionsMenuItem *> *SuggestionMenuItems;

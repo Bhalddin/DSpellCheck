@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "aspell.h"
 #include "Controls/CheckedList/CheckedList.h"
 #include "CommonFunctions.h"
+#include "DicOptions.h"
 #include "LangList.h"
 #include "DownloadDicsDlg.h"
 #include "Plugin.h"
@@ -207,7 +208,6 @@ void SimpleDlg::ApplySettings (SpellChecker *SpellCheckerInstance)
   SpellCheckerInstance->SetSuggType (ComboBox_GetCurSel (HSuggType));
   SpellCheckerInstance->SetCheckComments (Button_GetCheck (HCheckComments) == BST_CHECKED);
   SpellCheckerInstance->SetDecodeNames (Button_GetCheck (HDecodeNames) == BST_CHECKED);
-  SpellCheckerInstance->SetOneUserDic (Button_GetCheck (HOneUserDic) == BST_CHECKED);
   UpdateLangsMenu ();
   CLEAN_AND_ZERO_ARR (Buf);
 }
@@ -245,8 +245,8 @@ void SimpleDlg::FillLibInfo (int Status, TCHAR *AspellPath, TCHAR *HunspellPath,
     Static_SetText (HLibGroupBox, _T ("Aspell Location"));
     ShowWindow (HLibLink, 1);
     ShowWindow (HRemoveDics, 0);
+    ShowWindow (HDictionaryOptions, 0);
     ShowWindow (HDecodeNames, 0);
-    ShowWindow (HOneUserDic, 0);
     ShowWindow (HAspellResetPath, 1);
     ShowWindow (HHunspellResetPath, 0);
     ShowWindow (HHunspellPathGroupBox, 0);
@@ -260,10 +260,10 @@ void SimpleDlg::FillLibInfo (int Status, TCHAR *AspellPath, TCHAR *HunspellPath,
   {
     ShowWindow (HAspellStatus, 0);
     ShowWindow (HDownloadDics, 1);
+    ShowWindow (HDictionaryOptions, 1);
     ShowWindow (HLibLink, 0); // Link to dictionaries doesn't seem to be working anyway
     ShowWindow (HRemoveDics, 1);
     ShowWindow (HDecodeNames, 1);
-    ShowWindow (HOneUserDic, 1);
     ShowWindow (HAspellResetPath, 0);
     ShowWindow (HHunspellResetPath, 1);
     ShowWindow (HHunspellPathGroupBox, 1);
@@ -323,11 +323,6 @@ void SimpleDlg::SetDecodeNames (BOOL Value)
   Button_SetCheck (HDecodeNames, Value ? BST_CHECKED : BST_UNCHECKED);
 }
 
-void SimpleDlg::SetOneUserDic (BOOL Value)
-{
-  Button_SetCheck (HOneUserDic, Value ? BST_CHECKED : BST_UNCHECKED);
-}
-
 int SimpleDlg::GetSelectedLib ()
 {
   return ComboBox_GetCurSel (HLibrary);
@@ -377,9 +372,9 @@ BOOL CALLBACK SimpleDlg::run_dlgProc (UINT message, WPARAM wParam, LPARAM lParam
       HLibrary = ::GetDlgItem (_hSelf, IDC_LIBRARY);
       HLibGroupBox = ::GetDlgItem (_hSelf, IDC_LIB_GROUPBOX);
       HDownloadDics = ::GetDlgItem (_hSelf, IDC_DOWNLOADDICS);
+      HDictionaryOptions = ::GetDlgItem (_hSelf, IDC_DIC_OPTIONS);
       HRemoveDics = ::GetDlgItem (_hSelf, IDC_REMOVE_DICS);
       HDecodeNames = ::GetDlgItem (_hSelf, IDC_DECODE_NAMES);
-      HOneUserDic = ::GetDlgItem (_hSelf, IDC_ONE_USER_DIC);
       HHunspellPathGroupBox = ::GetDlgItem (_hSelf, IDC_HUNSPELL_PATH_GROUPBOX);
       HHunspellPathType = ::GetDlgItem (_hSelf, IDC_HUNSPELL_PATH_TYPE);
       HAspellResetPath = ::GetDlgItem (_hSelf, IDC_RESETASPELLPATH);
@@ -466,6 +461,12 @@ BOOL CALLBACK SimpleDlg::run_dlgProc (UINT message, WPARAM wParam, LPARAM lParam
         if (HIWORD (wParam) == BN_CLICKED)
         {
           GetRemoveDics ()->DoDialog ();
+        }
+        break;
+      case IDC_DIC_OPTIONS:
+        if (HIWORD (wParam) == BN_CLICKED)
+        {
+          GetDicOptions ()->DoDialog ();
         }
         break;
       case IDC_RESETASPELLPATH:

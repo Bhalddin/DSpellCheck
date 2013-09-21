@@ -110,7 +110,6 @@ HunspellInterface::HunspellInterface (HWND NppWindowArg)
   SingularSpeller = Empty;
   DicDir = 0;
   SysDicDir = 0;
-  LastSelectedSpeller = Empty;
   AllHunspells = new std::map <TCHAR *, DicInfo, bool ( *)(TCHAR *, TCHAR *)> (SortCompare);
   IsHunspellWorking = FALSE;
   TemporaryBuffer = new char[DEFAULT_BUF_SIZE];
@@ -163,11 +162,6 @@ void HunspellInterface::UpdateOnDicRemoval (TCHAR *Path, BOOL &NeedSingleLangRes
     CLEAN_AND_ZERO ((*it).second.LocalDicPath);
     AllHunspells->erase (it);
   }
-}
-
-void HunspellInterface::SetUseOneDic (BOOL Value)
-{
-  UseOneDic = Value;
 }
 
 BOOL ArePathsEqual (TCHAR *path1, TCHAR *path2)
@@ -553,19 +547,19 @@ void HunspellInterface::MessageBoxWordCannotBeAdded ()
   SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
 }
 
+// Dictionary Num == -1 means unified anyway, any
+// Send anything except -1(perhaps 0) to get separated for single language mode
 void HunspellInterface::AddToDictionary (char *Word, int DictionaryNum)
 {
-  if (!LastSelectedSpeller.Speller)
-    return;
-
-  if (DictionaryNum != -1)
-    return;
-
   TCHAR *DicPath = 0;
-  if (UseOneDic)
+  DicInfo Speller = Empty;
+  if (DictionaryNum == -1)
     DicPath = UserDicPath;
   else
-    DicPath = LastSelectedSpeller.LocalDicPath;
+  {
+    Speller = MultiMode ? Spellers->at (DictionaryNum) : SingularSpeller;
+    DicPath = Speller.LocalDicPath;
+  }
 
   int res = 0;
 
@@ -617,7 +611,7 @@ void HunspellInterface::AddToDictionary (char *Word, int DictionaryNum)
     break;
   }
 
-  if (UseOneDic)
+  if (DictionaryNum == -1)
   {
     std::map <TCHAR *, DicInfo, bool ( *)(TCHAR *, TCHAR *)>::iterator it;
     Memorized->insert (Buf);
@@ -627,19 +621,17 @@ void HunspellInterface::AddToDictionary (char *Word, int DictionaryNum)
       char *ConvWord = GetConvertedWord (Buf, (*it).second.ConverterUTF8);
       if (*ConvWord)
         (*it).second.Speller->add (ConvWord);
-      else if ((*it).second.Speller == LastSelectedSpeller.Speller)
-        MessageBoxWordCannotBeAdded ();
       // Adding word to all currently loaded dictionaries and in memorized list to save it.
     }
   }
   else
   {
-    char *ConvWord = GetConvertedWord (Buf, LastSelectedSpeller.ConverterUTF8);
+    char *ConvWord = GetConvertedWord (Buf, Speller.ConverterUTF8);
     char *WordCopy = 0;
     SetString (WordCopy, ConvWord);
-    LastSelectedSpeller.LocalDic->insert (WordCopy);
+    Speller.LocalDic->insert (WordCopy);
     if (*ConvWord)
-      LastSelectedSpeller.Speller->add (ConvWord);
+      Speller.Speller->add (ConvWord);
     else
       MessageBoxWordCannotBeAdded ();
   }
@@ -649,11 +641,11 @@ std::vector<wchar_t *> *HunspellInterface::GetSuggestions (char *Word)
 {
   std::vector<wchar_t *> *SuggList = new std::vector<wchar_t *>;
   int Num = -1;
-  int CurNum;
   char **HunspellList = 0;
   char **CurHunspellList = 0;
-  char *WordUtf8 = 0;
-  LastSelectedSpeller = SingularSpeller;
+
+  TCHAR *Buf = 0;
+  int Counter = 0;
 
   if (!MultiMode)
   {
@@ -670,57 +662,57 @@ std::vector<wchar_t *> *HunspellInterface::GetSuggestions (char *Word)
       break;
     }
 
+    for (int i = 0; i < Num; i++)
+    {
+      wchar_t *Buf = 0;
+      SetString (Buf, (wchar_t *) GetConvertedWord (HunspellList[i], SingularSpeller.BackConverterWCHAR));
+      SuggList->push_back (Buf);
+    }
+
+    SingularSpeller.Speller->free_list (&HunspellList, Num);
   }
   else
   {
-    int MaxSize = -1;
-    // In this mode we're finding maximum by length list from selected languages
-    CurHunspellList = 0;
-    for (int i = 0; i < (int) Spellers->size (); i++)
+    for (unsigned int i = 0; i < Spellers->size (); i++)
     {
+      char **CurWordList = 0;
       switch (CurrentEncoding)
       {
       case ENCODING_UTF8:
-        CurNum = Spellers->at (i).Speller->suggest (&CurHunspellList, GetConvertedWord (Word, Spellers->at (i).ConverterUTF8));
+        Num = Spellers->at (i).Speller->suggest (&CurWordList, GetConvertedWord (Word, Spellers->at (i).ConverterUTF8));
         break;
       case ENCODING_ANSI:
-        CurNum = Spellers->at (i).Speller->suggest (&CurHunspellList, GetConvertedWord (Word, Spellers->at (i).ConverterANSI));
+        Num = Spellers->at (i).Speller->suggest (&CurWordList, GetConvertedWord (Word, Spellers->at (i).ConverterANSI));
         break;
       case ENCODING_WCHAR:
-        CurNum = Spellers->at (i).Speller->suggest (&CurHunspellList, GetConvertedWord ((wchar_t *) Word, Spellers->at (i).ConverterWCHAR));
+        Num = Spellers->at (i).Speller->suggest (&CurWordList, GetConvertedWord ((wchar_t *) Word, Spellers->at (i).ConverterWCHAR));
         break;
       }
-
-      if (CurNum > MaxSize)
+      for (int j = 0; j < Num; j++)
       {
-        if (Num != -1)
-          Spellers->at (i).Speller->free_list (&HunspellList, Num);
-
-        MaxSize = CurNum;
-        LastSelectedSpeller = Spellers->at (i);
-        HunspellList = CurHunspellList;
-        Num = CurNum;
+        wchar_t *Buf = 0;
+        SetString (Buf, (wchar_t *) GetConvertedWord (CurWordList[j], Spellers->at (i).BackConverterWCHAR));
+        SuggList->push_back (Buf);
       }
-      else
-      {
-        Spellers->at (i).Speller->free_list (&CurHunspellList, CurNum);
-      }
+      Spellers->at (i).Speller->free_list (&CurWordList, Num);
     }
+    StripEqualElements (SuggList);
+    wchar_t *TargetWordWChar = 0;
+    switch (CurrentEncoding)
+    {
+    case ENCODING_UTF8:
+      SetStringSUtf8 (TargetWordWChar, Word);
+      break;
+    case ENCODING_ANSI:
+      SetString (TargetWordWChar, Word);
+      break;
+    case ENCODING_WCHAR:
+      SetString (TargetWordWChar, (wchar_t *) Word);
+      break;
+    }
+    SortStringVectorByDamerauLevenshteinDistanceWchar (SuggList, TargetWordWChar);
+    CLEAN_AND_ZERO_ARR (TargetWordWChar);
   }
-
-  TCHAR *Buf = 0;
-  int Counter = 0;
-
-  for (int i = 0; i < Num; i++)
-  {
-    wchar_t *Buf = 0;
-    SetString (Buf, (wchar_t *) GetConvertedWord (HunspellList[i], LastSelectedSpeller.BackConverterWCHAR));
-    SuggList->push_back (Buf);
-  }
-
-  LastSelectedSpeller.Speller->free_list (&HunspellList, Num);
-
-  CLEAN_AND_ZERO_ARR (WordUtf8);
 
   return SuggList;
   return 0; // TODO: Fix

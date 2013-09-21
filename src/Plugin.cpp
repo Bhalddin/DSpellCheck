@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "controls/CheckedList/CheckedList.h"
 #include "MainDef.h"
 #include "AboutDlg.h"
+#include "DicOptions.h"
 #include "DownloadDicsDlg.h"
 #include "LangList.h"
 #include "Progress.h"
@@ -69,6 +70,7 @@ SettingsDlg *SettingsDlgInstance = 0;
 Suggestions *SuggestionsInstance = 0;
 LangList *LangListInstance = 0;
 RemoveDics *RemoveDicsInstance = 0;
+DicOptions *DicOptionsInstance = 0;
 SelectProxy *SelectProxyInstance = 0;
 Progress *ProgressInstance = 0;
 DownloadDicsDlg *DownloadDicsDlgInstance = 0;
@@ -189,6 +191,11 @@ LangList *GetLangList ()
 RemoveDics *GetRemoveDics ()
 {
   return RemoveDicsInstance;
+}
+
+DicOptions *GetDicOptions ()
+{
+  return DicOptionsInstance;
 }
 
 SelectProxy *GetSelectProxy ()
@@ -382,6 +389,7 @@ void pluginCleanUp ()
   CLEAN_AND_ZERO (LangListInstance);
   CLEAN_AND_ZERO (SelectProxyInstance);
   CLEAN_AND_ZERO (RemoveDicsInstance);
+  CLEAN_AND_ZERO (DicOptionsInstance);
   CLEAN_AND_ZERO (DownloadDicsDlgInstance);
   CLEAN_AND_ZERO (ProgressInstance);
 }
@@ -663,6 +671,9 @@ void InitClasses ()
 
   RemoveDicsInstance = new RemoveDics;
   RemoveDicsInstance->init ((HINSTANCE) hModule, nppData._nppHandle);
+
+  DicOptionsInstance = new DicOptions;
+  DicOptionsInstance->init ((HINSTANCE) hModule, nppData._nppHandle);
 
   SpellCheckerInstance = new SpellChecker (IniFilePath, SettingsDlgInstance, &nppData, SuggestionsInstance, LangListInstance);
 

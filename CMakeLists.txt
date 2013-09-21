@@ -75,6 +75,8 @@ set (list_of_files_DSpellCheck
   ${SRC_DIR}/LanguageName.h
   ${SRC_DIR}/RemoveDics.cpp
   ${SRC_DIR}/RemoveDics.h
+  ${SRC_DIR}/DicOptions.cpp
+  ${SRC_DIR}/DicOptions.h
   ${SRC_DIR}/SelectProxy.cpp
   ${SRC_DIR}/SelectProxy.h
   ${SRC_DIR}/DSpellCheck.rc

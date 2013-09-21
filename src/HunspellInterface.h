@@ -72,13 +72,13 @@ public:
   void SetAdditionalDirectory (TCHAR *Dir);
   void WriteUserDic (WordSet *Target, TCHAR *Path);
   void ReadUserDic (WordSet *Target, TCHAR *Path);
-  void SetUseOneDic (BOOL Value);
   void UpdateOnDicRemoval (TCHAR *Path, BOOL &NeedSingleLangReset, BOOL &NeedMultiLangReset);
   BOOL GetLangOnlySystem (TCHAR *Lang);
 private:
   DicInfo CreateHunspell (TCHAR *Name, int Type);
   BOOL ConvertAndCheckWord (DicInfo Dic, char *Word, EncodingType Encoding);
   void MessageBoxWordCannotBeAdded ();
+  void FilleVectorFromHunspellWordList (const char ***WordList, int num, std::vector<wchar_t *> *TargetVector);
 public:
 private:
   BOOL IsHunspellWorking;
@@ -90,7 +90,6 @@ private:
   char *GetConvertedWord (const char *Source, iconv_t Converter);
   char *GetConvertedWord (const wchar_t *Source, iconv_t Converter);
   DicInfo SingularSpeller;
-  DicInfo LastSelectedSpeller;
   DicInfo Empty;
   std::vector <DicInfo> *Spellers;
   WordSet *Memorized;

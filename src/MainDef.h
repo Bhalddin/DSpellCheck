@@ -80,6 +80,16 @@ namespace MenuFlagEnum
   };
 }
 
+namespace HunspellDictionaryMode
+{
+  enum e
+  {
+    SeparateForAll,
+    SeparateForSingle,
+    UnifiedForAll
+  };
+}
+
 struct MessageBoxInfo
 {
   HWND hWnd;

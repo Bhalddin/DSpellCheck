@@ -32,6 +32,7 @@ const int nbFunc = 8;
 #define QUICK_LANG_CHANGE_ITEM 3
 
 class LangList;
+class DicOptions;
 class DownloadDicsDlg;
 class SelectProxy;
 class SpellChecker;
@@ -108,6 +109,8 @@ typedef enum {
   EID_LIB_CHANGE,
   EID_APPLY_PROXY_SETTINGS,
   EID_SHOW_SELECT_PROXY,
+  EID_FILL_DIC_OPTIONS,
+  EID_COLLECT_DIC_OPTIONS,
   EID_MAX,
 } EventId;
 
@@ -143,6 +146,7 @@ HMENU GetLangsSubMenu (HMENU DSpellCheckMenuArg = 0);
 HANDLE getHModule ();
 LangList *GetLangList ();
 RemoveDics *GetRemoveDics ();
+DicOptions *GetDicOptions ();
 SelectProxy *GetSelectProxy ();
 Progress *GetProgress ();
 DownloadDicsDlg *GetDownloadDics ();
