@@ -27,7 +27,6 @@ AspellInterface::AspellInterface (HWND NppWindowArg)
 {
   NppWindow = NppWindowArg;
   SingularSpeller = 0;
-  LastSelectedSpeller = 0;
   Spellers = new std::vector<AspellSpeller *>;
   AspellLoaded = 0;
 }
@@ -150,7 +149,6 @@ std::vector<wchar_t *> *AspellInterface::GetSuggestions (char *Word)
   std::vector<wchar_t *> *SuggList = new std::vector<wchar_t *>;
   if (!MultiMode)
   {
-    LastSelectedSpeller = SingularSpeller;
     WordList = aspell_speller_suggest (SingularSpeller, TargetWord, -1);
     FilleVectorFromAspellWordList (WordList, SuggList);
   }
@@ -190,7 +188,7 @@ std::vector<wchar_t *> *AspellInterface::GetSuggestions (char *Word)
   return SuggList;
 }
 
-void AspellInterface::AddToDictionary (char *Word)
+void AspellInterface::AddToDictionary (char *Word, int DictionaryNum)
 {
   char *TargetWord = 0;
 
@@ -207,18 +205,30 @@ void AspellInterface::AddToDictionary (char *Word)
     break;
   }
 
-  if (!LastSelectedSpeller)
-    return;
-  aspell_speller_add_to_personal(LastSelectedSpeller, Word, strlen (Word) + 1);
-  aspell_speller_save_all_word_lists (LastSelectedSpeller);
-  if (aspell_speller_error(LastSelectedSpeller) != 0)
+  if (DictionaryNum == -1)
   {
-    TCHAR *ErrorMsg = 0;
-    SetString (ErrorMsg, aspell_speller_error_message (LastSelectedSpeller));
-    MessageBoxInfo MsgBox (NppWindow, ErrorMsg, _T ("Aspell Error"), MB_OK | MB_ICONEXCLAMATION);
-    SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
+    aspell_speller_add_to_personal(SingularSpeller, TargetWord, strlen (TargetWord) + 1);
+    aspell_speller_save_all_word_lists (SingularSpeller);
+    if (aspell_speller_error(SingularSpeller) != 0)
+    {
+      TCHAR *ErrorMsg = 0;
+      SetString (ErrorMsg, aspell_speller_error_message (SingularSpeller));
+      MessageBoxInfo MsgBox (NppWindow, ErrorMsg, _T ("Aspell Error"), MB_OK | MB_ICONEXCLAMATION);
+      SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
+    }
   }
-  LastSelectedSpeller = 0;
+  else
+  {
+    aspell_speller_add_to_personal(Spellers->at (DictionaryNum), TargetWord, strlen (TargetWord) + 1);
+    aspell_speller_save_all_word_lists (Spellers->at (DictionaryNum));
+    if (aspell_speller_error(Spellers->at (DictionaryNum)) != 0)
+    {
+      TCHAR *ErrorMsg = 0;
+      SetString (ErrorMsg, aspell_speller_error_message (Spellers->at (DictionaryNum)));
+      MessageBoxInfo MsgBox (NppWindow, ErrorMsg, _T ("Aspell Error"), MB_OK | MB_ICONEXCLAMATION);
+      SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
+    }
+  }
 
   switch (CurrentEncoding)
   {
@@ -233,54 +243,14 @@ void AspellInterface::AddToDictionary (char *Word)
   }
 }
 
-void AspellInterface::IgnoreAll (char *Word)
-{
-  if (!LastSelectedSpeller)
-    return;
-
-  char *TargetWord = 0;
-
-  switch (CurrentEncoding)
-  {
-  case ENCODING_UTF8:
-    TargetWord = Word;
-    break;
-  case ENCODING_ANSI:
-    SetStringDUtf8 (TargetWord, Word);
-    break;
-  case ENCODING_WCHAR:
-    SetStringDUtf8 (TargetWord, (wchar_t *) Word);
-    break;
-  }
-
-  aspell_speller_add_to_session (LastSelectedSpeller, TargetWord, strlen (TargetWord) + 1);
-  aspell_speller_save_all_word_lists (LastSelectedSpeller);
-  if (aspell_speller_error(LastSelectedSpeller) != 0)
-  {
-    AspellErrorMsgBox (0, aspell_speller_error_message (LastSelectedSpeller));
-  }
-  LastSelectedSpeller = 0;
-  switch (CurrentEncoding)
-  {
-  case ENCODING_UTF8:
-    break;
-  case ENCODING_ANSI:
-    CLEAN_AND_ZERO_ARR (TargetWord);
-    break;
-  case ENCODING_WCHAR:
-    CLEAN_AND_ZERO_ARR (TargetWord);
-    break;
-  }
-}
-
-BOOL AspellInterface::CheckWord (char *Word)
+BOOL AspellInterface::SpellerCheckWord (char *Word)
 {
   if (!AspellLoaded)
     return TRUE;
 
   char *DstWord = 0;
   BOOL res = FALSE;
-    switch (CurrentEncoding)
+  switch (CurrentEncoding)
   {
   case ENCODING_UTF8:
     DstWord = Word;

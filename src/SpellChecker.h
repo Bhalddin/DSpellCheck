@@ -39,20 +39,23 @@ struct SuggestionsMenuItem
   TCHAR *Text;
   BYTE Id;
   BOOL Separator;
-  SuggestionsMenuItem (TCHAR *TextArg, BYTE IdArg, BOOL SeparatorArg = FALSE)
+  MenuFlagEnum::e Flag;
+
+  SuggestionsMenuItem (TCHAR *TextArg, BYTE IdArg, MenuFlagEnum::e FlagArg = MenuFlagEnum::SIMPLE_ITEM)
   {
     Text = 0;
     SetString (Text, TextArg);
     Id = IdArg;
-    Separator = SeparatorArg;
+    Flag = FlagArg;
   }
+
   ~SuggestionsMenuItem ()
   {
     CLEAN_AND_ZERO_ARR (Text);
   };
 };
 
-void InsertSuggMenuItem (HMENU Menu, TCHAR *Text, BYTE Id, int InsertPos, BOOL Separator = FALSE);
+void InsertSuggMenuItem (HMENU Menu, TCHAR *Text, BYTE Id, int InsertPos, HMENU &HMenuTempStore, MenuFlagEnum::e Flag = MenuFlagEnum::SIMPLE_ITEM);
 
 class SpellChecker
 {
@@ -262,6 +265,7 @@ private:
   int DelimiterMode;
   BOOL WordNearCursorProtection;
   long LastCurPos;
+  std::vector<TCHAR *> *MultiLangList;
 
   int Lexer;
   std::vector <SuggestionsMenuItem *> *SuggestionMenuItems;

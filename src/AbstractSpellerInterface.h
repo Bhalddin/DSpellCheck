@@ -25,21 +25,26 @@ class AbstractSpellerInterface
 private:
 protected:
 public:
+  AbstractSpellerInterface ();
+  ~AbstractSpellerInterface ();
+
   virtual std::vector<TCHAR*> *GetLanguageList () = 0;
   virtual void SetLanguage (TCHAR *Lang) = 0;
   virtual void SetMultipleLanguages (std::vector<TCHAR *> *List) = 0; // Languages are from LangList
   void SetMode (int Multi) { MultiMode = Multi; }                         // Multi - 1, Single - 0
   void SetEncoding (EncodingType Encoding) {CurrentEncoding = Encoding; }
-  virtual BOOL CheckWord (char *Word) = 0;                         // Word in Utf-8 or ANSI
+  BOOL CheckWord (char *Word);                         // Word in Utf-8 or ANSI
+  virtual BOOL SpellerCheckWord (char *Word) = 0;      // Word in Utf-8 or ANSI
   virtual std::vector<wchar_t *> *GetSuggestions (char *Word) = 0;
-  virtual void AddToDictionary (char *Word) = 0;
-  virtual void IgnoreAll (char *Word) = 0;
+  virtual void AddToDictionary (char *Word, int DictionaryNum = -1) = 0;
+  void IgnoreAll (char *Word);
   virtual BOOL IsWorking () = 0;
 
 private:
 protected:
   int MultiMode;
   EncodingType CurrentEncoding;
+  WordSet *Ignored;
 public:
 };
 #endif // ABSTRACTSPELLERINTERFACE_H

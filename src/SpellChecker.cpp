@@ -102,6 +102,7 @@ SpellChecker::SpellChecker (const TCHAR *IniFilePathArg, SettingsDlg *SettingsDl
   SettingsLoaded = FALSE;
   UseProxy = FALSE;
   WordNearCursorProtection = FALSE;
+  MultiLangList = 0;
   SettingsToSave = new std::map<TCHAR *, DWORD, bool ( *)(TCHAR *, TCHAR *)> (SortCompare);
   if (SendMsgToNpp (NppDataInstance, NPPM_ALLOCATESUPPORTED, 0, 0))
   {
@@ -186,6 +187,7 @@ SpellChecker::~SpellChecker ()
   CLEAN_AND_ZERO_ARR (ProxyHostName);
   CLEAN_AND_ZERO_ARR (ProxyUserName);
   CLEAN_AND_ZERO_ARR (ProxyPassword);
+  CLEAN_AND_ZERO_STRING_VECTOR (MultiLangList);
   for (int i = 0; i < countof (ServerNames); i++)
     CLEAN_AND_ZERO_ARR (ServerNames[i]);
   for (int i = 0; i < countof (DefaultServers); i++)
@@ -201,31 +203,47 @@ SpellChecker::~SpellChecker ()
   CLEAN_AND_ZERO (CurrentLangs);
 }
 
-void InsertSuggMenuItem (HMENU Menu, TCHAR *Text, BYTE Id, int InsertPos, BOOL Separator)
+void InsertSuggMenuItem (HMENU Menu, TCHAR *Text, BYTE Id, int InsertPos, HMENU &HMenuTempStore, MenuFlagEnum::e Flag)
 {
   MENUITEMINFO mi;
   memset(&mi, 0, sizeof(mi));
   mi.cbSize = sizeof(MENUITEMINFO);
-  if (Separator)
+  if (Flag == MenuFlagEnum::MENU_CHILD)
+    Menu = HMenuTempStore;
+  if (Flag == MenuFlagEnum::SEPARATOR)
   {
     mi.fType = MFT_SEPARATOR;
   }
   else
   {
     mi.fType = MFT_STRING;
-    mi.fMask = MIIM_ID | MIIM_TYPE;
+    mi.fMask = MIIM_ID | MIIM_TYPE | ((Flag == MenuFlagEnum::MENU_PARENT) ? MIIM_SUBMENU : 0);
     if (!GetUseAllocatedIds ())
       mi.wID = MAKEWORD (Id, DSPELLCHECK_MENU_ID);
     else
       mi.wID = GetContextMenuIdStart () + Id;
 
     mi.dwTypeData = Text;
+    if (Flag == MenuFlagEnum::MENU_PARENT)
+    {
+      HMenuTempStore = CreatePopupMenu ();
+      mi.hSubMenu = HMenuTempStore;
+    }
     mi.cch = _tcslen (Text) + 1;
   }
+
   if (InsertPos == -1)
     InsertMenuItem (Menu, GetMenuItemCount (Menu), TRUE, &mi);
   else
     InsertMenuItem (Menu, InsertPos, TRUE, &mi);
+
+  /*
+  MENUITEMINFO Mif;
+  Mif.fMask = MIIM_ID;
+  Mif.cbSize = sizeof (MENUITEMINFO);
+  HMenuTempStore = (HMENU) Mif.wID;
+  GetMenuItemInfo (Menu, InsertPos == -1 ? GetMenuItemCount (Menu) : InsertPos, TRUE, &Mif);
+  */
 }
 
 BOOL WINAPI SpellChecker::NotifyMessage (UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -2066,14 +2084,14 @@ char *SpellChecker::GetWordAt (long CharPos, char *Text, long Offset)
   switch (CurrentEncoding)
   {
   case ENCODING_UTF8:
-    if (!*Iterator || Utf8chr ( DelimUtf8Converted, Iterator))
+    if ((!*Iterator || Utf8chr ( DelimUtf8Converted, Iterator)) && Iterator > Text)
       Iterator = (char *) Utf8Dec (Text, Iterator);
 
     while ((!Utf8chr ( DelimUtf8Converted, Iterator)) && Text < Iterator)
       Iterator = (char *) Utf8Dec (Text, Iterator);
     break;
   case ENCODING_ANSI:
-    if (!*Iterator || strchr (DelimConverted, *Iterator))
+    if ((!*Iterator || strchr (DelimConverted, *Iterator)) && Iterator > Text)
       Iterator--;
 
     while (!strchr (DelimConverted, *Iterator) && Text < Iterator)
@@ -2090,7 +2108,7 @@ char *SpellChecker::GetWordAt (long CharPos, char *Text, long Offset)
       }
     }
 
-    if (!ConvertedText[index] || wcschr (DelimConvertedWchar, ConvertedText[index]))
+    if ((!ConvertedText[index] || wcschr (DelimConvertedWchar, ConvertedText[index])) && index > 0)
     {
       index--;
     }
@@ -2135,6 +2153,8 @@ char *SpellChecker::GetWordAt (long CharPos, char *Text, long Offset)
     {
       wchar_t *WcharRes = (wchar_t *) DoCommonStringTokenization ((char *) (ConvertedText + index), &Context);
 
+      if (!WcharRes)
+        return 0;
 
       Res = Text + Indexation [WcharRes - ConvertedText];
       Text[Indexation [WcharRes + wcslen (WcharRes) - ConvertedText]] = '\0';
@@ -2234,7 +2254,6 @@ void SpellChecker::ProcessMenuResult (UINT MenuId)
         {
           ApplyConversions (SelectedWord);
           CurrentSpeller->IgnoreAll (SelectedWord);
-          WUCLength = strlen (SelectedWord);
           SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETSEL, WUCPosition + WUCLength , WUCPosition + WUCLength );
           RecheckVisibleBothViews ();
         }
@@ -2242,7 +2261,13 @@ void SpellChecker::ProcessMenuResult (UINT MenuId)
         {
           ApplyConversions (SelectedWord);
           CurrentSpeller->AddToDictionary (SelectedWord);
-          WUCLength = strlen (SelectedWord);
+          SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETSEL, WUCPosition + WUCLength , WUCPosition + WUCLength );
+          RecheckVisibleBothViews ();
+        }
+        else if (Result >= MID_ADD_TO_DICS_START)
+        {
+          ApplyConversions (SelectedWord);
+          CurrentSpeller->AddToDictionary (SelectedWord, Result - MID_ADD_TO_DICS_START);
           SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETSEL, WUCPosition + WUCLength , WUCPosition + WUCLength );
           RecheckVisibleBothViews ();
         }
@@ -2353,7 +2378,7 @@ void SpellChecker::FillSuggestionsMenu (HMENU Menu)
   }
 
   if (LastSuggestions->size () > 0)
-    SuggestionMenuItems->push_back (new SuggestionsMenuItem (_T (""), 0, TRUE));
+    SuggestionMenuItems->push_back (new SuggestionsMenuItem (_T (""), 0, MenuFlagEnum::SEPARATOR));
 
   TCHAR *MenuString = new TCHAR [WUCLength + 50 + 1]; // Add "" to dictionary
   char *BufUtf8 = 0;
@@ -2373,16 +2398,31 @@ void SpellChecker::FillSuggestionsMenu (HMENU Menu)
   _stprintf (MenuString, _T ("Ignore \"%s\" for Current Session"), Buf);
   SuggestionMenuItems->push_back (new SuggestionsMenuItem (MenuString, MID_IGNOREALL));
   _stprintf (MenuString, _T ("Add \"%s\" to Dictionary"), Buf);
-  SuggestionMenuItems->push_back (new SuggestionsMenuItem (MenuString, MID_ADDTODICTIONARY));
+  MenuFlagEnum::e flag = MenuFlagEnum::SIMPLE_ITEM;
+  if (LibMode == 0 && _tcscmp (AspellLanguage, _T ("<MULTIPLE>")) == 0)
+  {
+    flag = MenuFlagEnum::MENU_PARENT;
+  }
+
+  SuggestionMenuItems->push_back (new SuggestionsMenuItem (MenuString, MID_ADDTODICTIONARY, flag));
+
+  if (flag == MenuFlagEnum::MENU_PARENT)
+  {
+    for (unsigned int i = 0; i < MultiLangList->size (); i++)
+    {
+      SuggestionMenuItems->push_back (new SuggestionsMenuItem (MultiLangList->at (i), MID_ADD_TO_DICS_START + i, MenuFlagEnum::MENU_CHILD));
+    }
+  }
 
   if (SuggestionsMode == SUGGESTIONS_CONTEXT_MENU)
-    SuggestionMenuItems->push_back (new SuggestionsMenuItem (_T (""), 0, TRUE));
+    SuggestionMenuItems->push_back (new SuggestionsMenuItem (_T (""), 0, MenuFlagEnum::SEPARATOR));
 
+  HMENU menu = 0;
   if (SuggestionsMode == SUGGESTIONS_BOX)
   {
     for (unsigned int i = 0; i < SuggestionMenuItems->size (); i++)
     {
-      InsertSuggMenuItem (Menu, SuggestionMenuItems->at (i)->Text, SuggestionMenuItems->at (i)->Id, i, SuggestionMenuItems->at (i)->Separator);
+      InsertSuggMenuItem (Menu, SuggestionMenuItems->at (i)->Text, SuggestionMenuItems->at (i)->Id, i, menu, SuggestionMenuItems->at (i)->Flag);
       CLEAN_AND_ZERO (SuggestionMenuItems->at (i));
     }
     CLEAN_AND_ZERO (SuggestionMenuItems);
@@ -3047,7 +3087,8 @@ void SpellChecker::SetDelimiterException (const char *Str)
 void SpellChecker::SetMultipleLanguages (const TCHAR *MultiString, AbstractSpellerInterface *Speller)
 {
   TCHAR *Context = 0;
-  std::vector<TCHAR *> *MultiLangList = new std::vector<TCHAR *>;
+  CLEAN_AND_ZERO_STRING_VECTOR (MultiLangList);
+  MultiLangList = new std::vector<TCHAR *>;
   TCHAR *MultiStringCopy = 0;
   TCHAR *Token = 0;
   TCHAR *TBuf = 0;
@@ -3064,7 +3105,6 @@ void SpellChecker::SetMultipleLanguages (const TCHAR *MultiString, AbstractSpell
 
   Speller->SetMultipleLanguages (MultiLangList);
   CLEAN_AND_ZERO_ARR (MultiStringCopy);
-  CLEAN_AND_ZERO_STRING_VECTOR (MultiLangList);
 }
 
 BOOL SpellChecker::HunspellReinitSettings (BOOL ResetDirectory)

@@ -31,9 +31,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class Hunspell;
 
-typedef stdext::hash_set <char *, hash_compare_strings> WordSet;
-typedef std::set <char *, bool (*)(char *, char *)> SortedWordSet;
-
 struct DicInfo
 {
   Hunspell *Speller;
@@ -66,11 +63,10 @@ public:
   __override virtual std::vector<TCHAR*> *GetLanguageList ();
   __override virtual void SetLanguage (TCHAR *Lang);
   __override virtual void SetMultipleLanguages (std::vector<TCHAR *> *List); // Languages are from LangList
-  __override virtual BOOL CheckWord (char *Word); // Word in Utf-8 or ANSI
+  __override virtual BOOL SpellerCheckWord (char *Word); // Word in Utf-8 or ANSI
   __override virtual BOOL IsWorking ();
   __override virtual std::vector<wchar_t *> *GetSuggestions (char *Word);
-  __override virtual void AddToDictionary (char *Word);
-  __override virtual void IgnoreAll (char *Word);
+  __override virtual void AddToDictionary (char *Word, int DictionaryNum = -1);
 
   void SetDirectory (TCHAR *Dir);
   void SetAdditionalDirectory (TCHAR *Dir);
@@ -81,7 +77,7 @@ public:
   BOOL GetLangOnlySystem (TCHAR *Lang);
 private:
   DicInfo CreateHunspell (TCHAR *Name, int Type);
-  BOOL SpellerCheckWord (DicInfo Dic, char *Word, EncodingType Encoding);
+  BOOL ConvertAndCheckWord (DicInfo Dic, char *Word, EncodingType Encoding);
   void MessageBoxWordCannotBeAdded ();
 public:
 private:
@@ -98,7 +94,6 @@ private:
   DicInfo Empty;
   std::vector <DicInfo> *Spellers;
   WordSet *Memorized;
-  WordSet *Ignored;
   BOOL InitialReadingBeenDone;
   char *TemporaryBuffer;
   TCHAR *UserDicPath; // For now only default one.

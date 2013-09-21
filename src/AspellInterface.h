@@ -31,17 +31,15 @@ public:
   __override virtual std::vector<TCHAR*> *GetLanguageList ();
   __override virtual void SetLanguage (TCHAR *Lang);
   __override virtual void SetMultipleLanguages (std::vector<TCHAR *> *List); // Languages are from LangList
-  __override virtual BOOL CheckWord (char *Word); // Word in Utf-8 or ANSI (For now only Utf-8)
+  __override virtual BOOL SpellerCheckWord (char *Word); // Word in Utf-8 or ANSI (For now only Utf-8)
   __override virtual BOOL IsWorking ();
   __override virtual std::vector<wchar_t *> *GetSuggestions (char *Word);
-  __override virtual void AddToDictionary (char *Word);
-  __override virtual void IgnoreAll (char *Word);
+  __override virtual void AddToDictionary (char *Word, int DictionaryNum = -1);
 
   BOOL Init (TCHAR *PathArg);
 private:
 public:
 private:
-  AspellSpeller *LastSelectedSpeller;
   AspellSpeller *SingularSpeller;
   std::vector<AspellSpeller *> *Spellers;
   BOOL AspellLoaded;

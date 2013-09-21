@@ -20,6 +20,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef COMMON_FUNCTIONS_H
 #define COMMON_FUNCTIONS_H
 
+#include "MainDef.h"
+
 struct NppData;
 
 void SetString (char *&Target, const char *Str);
@@ -76,5 +78,7 @@ void SortStringVectorByDamerauLevenshteinDistanceWchar (std::vector <wchar_t *> 
 void StripEqualElements (std::vector <wchar_t *> *&Vector); // Warning - changes pointer, vector order is being spoiled in process
 char *strtok_s_nonalnum (char *s1, const char *delimit, char **context);
 wchar_t *wcstok_s_nonalnum (wchar_t *s1, const wchar_t *delimit, wchar_t **context);
+
+void CleanAndZeroWordList (WordSet *&WordListInstance);
 
 #endif // COMMON_FUNCTIONS_H;

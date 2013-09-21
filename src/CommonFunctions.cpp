@@ -1058,4 +1058,14 @@ wchar_t *wcstok_s_nonalnum (wchar_t *s1, const wchar_t *delimit, wchar_t **conte
     return s1;
 }
 
+void CleanAndZeroWordList (WordSet *&WordListInstance)
+{
+  WordSet::iterator it = WordListInstance->begin ();
+  for (; it != WordListInstance->end (); ++it)
+  {
+    delete [] (*it);
+  }
+  CLEAN_AND_ZERO (WordListInstance);
+}
+
 

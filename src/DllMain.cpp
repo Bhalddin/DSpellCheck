@@ -104,9 +104,13 @@ LRESULT CALLBACK SubWndProcNotepad(HWND hWnd, UINT Message, WPARAM wParam, LPARA
       if (MenuList)
       {
         HMENU Menu = (HMENU) wParam;
+        HMENU TempMenu = 0;
+        int j = 0;
         for (unsigned int i = 0; i < MenuList->size (); i++)
         {
-          InsertSuggMenuItem (Menu, (*MenuList)[i]->Text, (*MenuList)[i]->Id, i, (*MenuList)[i]->Separator);
+          InsertSuggMenuItem (Menu, (*MenuList)[i]->Text, (*MenuList)[i]->Id, ((*MenuList)[i]->Flag != MenuFlagEnum::MENU_CHILD) ? j : -1, TempMenu, (*MenuList)[i]->Flag);
+          if ((*MenuList)[i]->Flag != MenuFlagEnum::MENU_CHILD)
+            j++;
         }
 
         for (unsigned int i = 0; i < MenuList->size (); i++)

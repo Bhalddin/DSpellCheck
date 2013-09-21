@@ -69,6 +69,17 @@ namespace RecheckPreventionTypes
   };
 }
 
+namespace MenuFlagEnum
+{
+  enum e
+  {
+    SIMPLE_ITEM,
+    SEPARATOR,
+    MENU_PARENT,
+    MENU_CHILD,
+  };
+}
+
 struct MessageBoxInfo
 {
   HWND hWnd;
@@ -91,8 +102,8 @@ class hash_compare_strings
 public:
   enum
   {
-	  min_buckets = 1,
-	  bucket_size = 1,
+    min_buckets = 1,
+    bucket_size = 1,
   };
 
   size_t operator() (const char * a) const
@@ -143,7 +154,7 @@ public:
 #define MID_ADDTODICTIONARY 101
 #define MID_IGNOREALL 102
 
-#define MID_ADD_TO_DICS_START MID_IGNOREALL + 1
+#define MID_ADD_TO_DICS_START (MID_IGNOREALL + 1)
 
 // Language menu item ids
 #define MULTIPLE_LANGS 101
@@ -170,6 +181,9 @@ public:
 #define TM_CHANGE_DIR           WM_USER + 1006
 #define TM_ADD_USER_SERVER      WM_USER + 1007
 #define TM_UPDATE_LANGS_MENU    WM_USER + 1008
+
+typedef stdext::hash_set <char *, hash_compare_strings> WordSet;
+typedef std::set <char *, bool (*)(char *, char *)> SortedWordSet;
 
 #ifdef UNICODE
 #define DEFAULT_DELIMITERS _T (",.!?\":;{}()[]\\/=+-^$*<>|#$@%&~\u2026\u2116\u2014\u00AB\u00BB\u2013\u2022\u00A9\u203A\u201C\u201D\u00B7\u00A0\u0060\u2192\u00d7")

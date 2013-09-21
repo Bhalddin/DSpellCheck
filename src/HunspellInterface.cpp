@@ -106,7 +106,6 @@ HunspellInterface::HunspellInterface (HWND NppWindowArg)
   DicList = new std::set <AvailableLangInfo>;
   Spellers = new std::vector<DicInfo>;
   memset (&Empty, 0, sizeof (Empty));
-  Ignored = new WordSet;
   Memorized = new WordSet;
   SingularSpeller = Empty;
   DicDir = 0;
@@ -164,16 +163,6 @@ void HunspellInterface::UpdateOnDicRemoval (TCHAR *Path, BOOL &NeedSingleLangRes
     CLEAN_AND_ZERO ((*it).second.LocalDicPath);
     AllHunspells->erase (it);
   }
-}
-
-static void CleanAndZeroWordList (WordSet *&WordListInstance)
-{
-  WordSet::iterator it = WordListInstance->begin ();
-  for (; it != WordListInstance->end (); ++it)
-  {
-    delete [] (*it);
-  }
-  CLEAN_AND_ZERO (WordListInstance);
 }
 
 void HunspellInterface::SetUseOneDic (BOOL Value)
@@ -250,7 +239,6 @@ HunspellInterface::~HunspellInterface ()
     WriteUserDic (Memorized, UserDicPath);
 
   CleanAndZeroWordList (Memorized);
-  CleanAndZeroWordList (Ignored);
 
   CLEAN_AND_ZERO (Spellers);
   CLEAN_AND_ZERO_ARR (DicDir);
@@ -430,7 +418,7 @@ char *HunspellInterface::GetConvertedWord (const wchar_t *Source, iconv_t Conver
   return TemporaryBuffer;
 }
 
-BOOL HunspellInterface::SpellerCheckWord (DicInfo Dic, char *Word, EncodingType Encoding)
+BOOL HunspellInterface::ConvertAndCheckWord (DicInfo Dic, char *Word, EncodingType Encoding)
 {
   char *WordToCheck = 0;
   switch (Encoding)
@@ -453,22 +441,19 @@ BOOL HunspellInterface::SpellerCheckWord (DicInfo Dic, char *Word, EncodingType 
   return Dic.Speller->spell (WordToCheck);
 }
 
-BOOL HunspellInterface::CheckWord (char *Word)
+BOOL HunspellInterface::SpellerCheckWord (char *Word)
 {
   /*
   if (Memorized->find (Word) != Memorized->end ()) // This check is for dictionaries which are in other than utf-8 encoding
   return TRUE;                                   // Though it slows down stuff a little, I hope it will do
   */
 
-  if (Ignored->find (Word) != Ignored->end ())
-    return TRUE;
-
   BOOL res = FALSE;
   unsigned int Len = strlen (Word);
   if (!MultiMode)
   {
     if (SingularSpeller.Speller)
-      res = SpellerCheckWord (SingularSpeller, Word, CurrentEncoding);
+      res = ConvertAndCheckWord (SingularSpeller, Word, CurrentEncoding);
     else
       res = TRUE;
   }
@@ -479,7 +464,7 @@ BOOL HunspellInterface::CheckWord (char *Word)
 
     for (int i = 0; i < (int )Spellers->size () && !res; i++)
     {
-      res = res || SpellerCheckWord (Spellers->at (i), Word, CurrentEncoding);
+      res = res || ConvertAndCheckWord (Spellers->at (i), Word, CurrentEncoding);
     }
   }
   return res;
@@ -568,9 +553,12 @@ void HunspellInterface::MessageBoxWordCannotBeAdded ()
   SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
 }
 
-void HunspellInterface::AddToDictionary (char *Word)
+void HunspellInterface::AddToDictionary (char *Word, int DictionaryNum)
 {
   if (!LastSelectedSpeller.Speller)
+    return;
+
+  if (DictionaryNum != -1)
     return;
 
   TCHAR *DicPath = 0;
@@ -655,16 +643,6 @@ void HunspellInterface::AddToDictionary (char *Word)
     else
       MessageBoxWordCannotBeAdded ();
   }
-}
-
-void HunspellInterface::IgnoreAll (char *Word)
-{
-  if (!LastSelectedSpeller.Speller)
-    return;
-
-  char *Buf = 0;
-  SetString (Buf, Word);
-  Ignored->insert (Buf);
 }
 
 std::vector<wchar_t *> *HunspellInterface::GetSuggestions (char *Word)
