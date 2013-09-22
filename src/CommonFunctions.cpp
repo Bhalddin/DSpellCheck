@@ -894,7 +894,7 @@ static int DamerauLevenshteinDistanceWchar (wchar_t *Source, wchar_t *Target)
       int i1 = Sd[*TargetIterator];
       int j1 = DB;
 
-      if (Source[i - 1] == Target[j - 1])
+      if (towupper (Source[i - 1]) == towupper (Target[j - 1]))
       {
         Score[(i + 1) * H + (j + 1)] = Score[i * H + j];
         DB = j;

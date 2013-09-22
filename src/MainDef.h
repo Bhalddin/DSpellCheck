@@ -144,10 +144,10 @@ public:
   size_t operator() (wchar_t a) const
   {
     stdext::hash<wchar_t> hash_fn;
-    return hash_fn (a);
+    return hash_fn (towupper (a));
   }
 
-  bool operator()(wchar_t a, wchar_t b) const
+  bool operator() (wchar_t a, wchar_t b) const
   {
     return towupper (a) < towupper (b);
   }

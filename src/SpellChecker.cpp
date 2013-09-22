@@ -168,6 +168,10 @@ SpellChecker::~SpellChecker ()
   CLEAN_AND_ZERO_ARR (DelimConvertedWchar);
   CLEAN_AND_ZERO_ARR (DelimUtf8Converted);
   CLEAN_AND_ZERO_ARR (DelimUtf8);
+  CLEAN_AND_ZERO_ARR (DelimExcConverted);
+  CLEAN_AND_ZERO_ARR (DelimExcConvertedWchar);
+  CLEAN_AND_ZERO_ARR (DelimExcUtf8Converted);
+  CLEAN_AND_ZERO_ARR (DelimExcUtf8);
   CLEAN_AND_ZERO_ARR (AspellLanguage);
   CLEAN_AND_ZERO_ARR (AspellMultiLanguages);
   CLEAN_AND_ZERO_ARR (HunspellLanguage);
@@ -683,6 +687,7 @@ BOOL WINAPI SpellChecker::NotifyEvent (DWORD Event)
         WordNearCursorProtection = FALSE;
         if (RecheckNeeded)
           RecheckVisible ();
+        CLEAN_AND_ZERO_ARR (Buf);
         break;
       }
       long Pos = WordFound - Buf + Offset;
@@ -697,6 +702,7 @@ BOOL WINAPI SpellChecker::NotifyEvent (DWORD Event)
       LastCurPos = NewCurPos;
       if (RecheckNeeded)
         RecheckVisible ();
+      CLEAN_AND_ZERO_ARR (Buf);
     }
     else
       WordNearCursorProtection = FALSE;
@@ -1969,7 +1975,7 @@ void SpellChecker::FindPrevMistake ()
     Result = CheckText (Range.lpstrText + offset, Range.chrg.cpMin + offset, FIND_LAST); // Possibly there should be done optimization to avoid double conversion
     CLEAN_AND_ZERO_ARR (Range.lpstrText);
     CLEAN_AND_ZERO_ARR (ConvertedRange);
-    CLEAN_AND_ZERO (Indexation);
+    CLEAN_AND_ZERO_ARR (Indexation);
     if (Result)
       break;
 
@@ -2159,7 +2165,11 @@ char *SpellChecker::GetWordAt (long CharPos, char *Text, long Offset)
       wchar_t *WcharRes = (wchar_t *) DoCommonStringTokenization ((char *) (ConvertedText + index), &Context);
 
       if (!WcharRes)
+      {
+        CLEAN_AND_ZERO_ARR (Indexation);
+        CLEAN_AND_ZERO_ARR (ConvertedText);
         return 0;
+      }
 
       Res = Text + Indexation [WcharRes - ConvertedText];
       Text[Indexation [WcharRes + wcslen (WcharRes) - ConvertedText]] = '\0';
@@ -2366,6 +2376,7 @@ void SpellChecker::FillSuggestionsMenu (HMENU Menu)
 
   case ENCODING_WCHAR:
     wchar_t *TempStr = 0;
+    CLEAN_AND_ZERO_ARR (SelectedWord);
     SetStringSUtf8 (TempStr, Range.lpstrText);
     SelectedWord = (char *) TempStr;
     break;
@@ -3639,6 +3650,7 @@ newtoken:
     break;
   case ENCODING_WCHAR:
     CLEAN_AND_ZERO_ARR (TextToCheck);
+    CLEAN_AND_ZERO_ARR (Indexation);
     break;
   }
 

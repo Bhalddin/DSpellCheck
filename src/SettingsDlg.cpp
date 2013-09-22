@@ -908,6 +908,7 @@ void AdvancedDlg::ApplySettings (SpellChecker *SpellCheckerInstance)
   SpellCheckerInstance->SetBufferSize (x);
   GetDownloadDics ()->UpdateListBox ();
   int Length = Edit_GetTextLength (HEditDelimiters);
+  CLEAN_AND_ZERO_ARR (TBuf);
   TBuf = new TCHAR[Length + 1];
   Edit_GetText (HEditDelimiters, TBuf, Length + 1);
   char *BufUtf8 = 0;
