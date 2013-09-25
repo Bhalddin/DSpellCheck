@@ -114,22 +114,6 @@ FONT 8, "MS Shell Dlg", 400, 0, 1
 
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDD_HUNSPELL_DIC_OPTIONS DIALOG 0, 0, 251, 86
-STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
-CAPTION "Hunspell Dictionary Options"
-FONT 8, "Ms Shell Dlg"
-{
-    DEFPUSHBUTTON   "OK", IDOK, 145, 66, 50, 14
-    PUSHBUTTON      "Cancel", IDCANCEL, 199, 66, 50, 14
-    GROUPBOX        "Dictionary Usage", IDC_STATIC, 3, 2, 245, 61
-    AUTORADIOBUTTON "Use Separate Dictionaries for Each Mode", IDC_SEPARATE_FOR_ALL, 11, 15, 147, 8, WS_GROUP
-    AUTORADIOBUTTON "Use Separate Dictionaries for Single Dictionary mode, Unified for Multi", IDC_SEPARATE_FOR_SINGLE, 11, 31, 235, 8
-    AUTORADIOBUTTON "Use Unified Dictionary for Each Mode", IDC_UNIFIED_FOR_ALL, 11, 47, 135, 8
-}
-
-
-
-LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDD_DIALOG_SELECT_PROXY DIALOG 0, 0, 202, 132
 STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_POPUP | WS_SYSMENU
 CAPTION "Proxy Settings"
@@ -182,6 +166,22 @@ FONT 8, "Ms Shell Dlg"
     PUSHBUTTON      "", IDC_REFRESH, 115, 206, 16, 14, BS_ICON
     AUTOCHECKBOX    "Install for All Users", IDC_INSTALL_SYSTEM, 7, 195, 73, 8
     PUSHBUTTON      "Proxy Settings...", IDC_SELECTPROXY, 167, 191, 56, 14
+}
+
+
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+IDD_HUNSPELL_DIC_OPTIONS DIALOG 0, 0, 251, 86
+STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
+CAPTION "Hunspell Dictionary Options"
+FONT 8, "Ms Shell Dlg"
+{
+    DEFPUSHBUTTON   "OK", IDOK, 145, 66, 50, 14
+    PUSHBUTTON      "Cancel", IDCANCEL, 199, 66, 50, 14
+    GROUPBOX        "Dictionary Usage", IDC_STATIC, 3, 2, 245, 61
+    AUTORADIOBUTTON "Use Separate Dictionaries for Each Mode", IDC_SEPARATE_FOR_ALL, 11, 15, 147, 8, WS_GROUP
+    AUTORADIOBUTTON "Use Separate Dictionaries for Single Dictionary mode, Unified for Multi", IDC_SEPARATE_FOR_SINGLE, 11, 31, 235, 8
+    AUTORADIOBUTTON "Use Unified Dictionary for Each Mode", IDC_UNIFIED_FOR_ALL, 11, 47, 135, 8
 }
 
 
@@ -274,8 +274,8 @@ IDI_REFRESH        ICON           "..\\Resources\\arrow_refresh.ico"
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 1 VERSIONINFO
-    FILEVERSION     1,2,8,0
-    PRODUCTVERSION  1,2,8,0
+    FILEVERSION     1,3,0,0
+    PRODUCTVERSION  1,3,0,0
     FILEOS          VOS__WINDOWS32
     FILETYPE        VFT_DLL
     FILESUBTYPE     VFT2_UNKNOWN
@@ -289,12 +289,12 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
             VALUE "Comments", "Source - https://github.com/Predelnik/DSpellCheck"
             VALUE "CompanyName", "Sergey Semushin <predelnik@gmail.com>"
             VALUE "FileDescription", "DSpellCheck - Spell Checker Plugin for Notepad++"
-            VALUE "FileVersion", "1.2.8.0"
+            VALUE "FileVersion", "1.3.0.0"
             VALUE "InternalName", "DSpellCheck"
             VALUE "LegalCopyright", "Copyright (C) 2013 Sergey Semushin"
             VALUE "OriginalFilename", "DSpellCheck.dll"
             VALUE "ProductName", "DSpellCheck"
-            VALUE "ProductVersion", "1,2,8,0"
+            VALUE "ProductVersion", "1,3,0,0"
             VALUE "SpecialBuild", "UNICODE"
         }
     }
