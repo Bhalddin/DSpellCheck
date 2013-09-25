@@ -2648,7 +2648,7 @@ void SpellChecker::SaveSettings ()
   SaveToIni (_T ("Suggestions_Number"), SuggestionsNum, 5);
   char *DefaultDelimUtf8 = 0;
   SetStringDUtf8 (DefaultDelimUtf8, DEFAULT_DELIMITERS);
-  SaveToIni (_T ("Delimiter_Mode"), DelimiterMode, 0);
+  SaveToIni (_T ("Delimiter_Mode"), DelimiterMode, 1);
   SaveToIniUtf8 (_T ("Delimiters"), DelimUtf8, DefaultDelimUtf8, TRUE);
   SaveToIniUtf8 (_T ("Delimiter_Exceptions"), DelimExcUtf8, DefaultDelimUtf8, TRUE);
   CLEAN_AND_ZERO_ARR (DefaultDelimUtf8);
@@ -2738,7 +2738,7 @@ void SpellChecker::LoadSettings ()
   SetHunspellLanguage (TBuf);
   CLEAN_AND_ZERO_ARR (TBuf);
 
-  LoadFromIni (DelimiterMode, _T ("Delimiter_Mode"), 0);
+  LoadFromIni (DelimiterMode, _T ("Delimiter_Mode"), 1);
 
   SetStringDUtf8 (BufUtf8, DEFAULT_DELIMITERS);
   LoadFromIniUtf8 (BufUtf8, _T ("Delimiters"), BufUtf8, TRUE);
@@ -3424,20 +3424,47 @@ BOOL SpellChecker::CheckWord (char *Word, long Start, long End)
     }
   }
 
-  if (Ignore_ && strchr (Word, '_') != 0) // I guess the same for UTF-8 and ANSI
+  switch (CurrentEncoding)
   {
-    res = TRUE;
-    goto CleanUp;
-  }
-
-  unsigned int Len = strlen (Word);
-
-  if (IgnoreSEApostrophe)
-  {
-    if (Word[0] == '\'' || Word[Len - 1] == '\'')
+  case ENCODING_UTF8:
+  case ENCODING_ANSI:
+    if (Ignore_ && strchr (Word, '_') != 0) // I guess the same for UTF-8 and ANSI
     {
       res = TRUE;
       goto CleanUp;
+    }
+    break;
+  case ENCODING_WCHAR:
+    if (Ignore_ && wcschr ((wchar_t *) Word, L'_') != 0) // I guess the same for UTF-8 and ANSI
+    {
+      res = TRUE;
+      goto CleanUp;
+    }
+    break;
+  }
+
+  unsigned int Len = 0;;
+
+  if (IgnoreSEApostrophe)
+  {
+    switch (CurrentEncoding)
+    {
+    case ENCODING_UTF8:
+    case ENCODING_ANSI:
+      Len = strlen (Word);
+      if (Word[0] == '\'' || Word[Len - 1] == '\'')
+      {
+        res = TRUE;
+        goto CleanUp;
+      }
+      break;
+    case ENCODING_WCHAR:
+      if (((wchar_t *)Word)[0] == L'\'' || ((wchar_t *)Word)[Len - 1] == L'\'')
+      {
+        res = TRUE;
+        goto CleanUp;
+      }
+      break;
     }
   }
 

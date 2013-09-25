@@ -38,56 +38,57 @@ enum EncodingType
 
 namespace CustomGUIMessage
 {
-  enum e
-  {
-    DO_MESSAGE_BOX = 0,   // Use MessageBoxInfo as wParam.
-    SHOW_CALCULATED_MENU = 1,
-    MAX,
-  };
+enum e
+{
+  DO_MESSAGE_BOX = 0,   // Use MessageBoxInfo as wParam.
+  SHOW_CALCULATED_MENU = 1,
+  MAX,
+};
 }
 
-const TCHAR *const CustomGUIMesssagesNames[] = {
+const TCHAR *const CustomGUIMesssagesNames[] =
+{
   _T ("DSpellCheck_MessageBox"),
   _T ("DSpellCheck_ShowCalculatedMenu"),
 };
 
 namespace DelimiterModes
 {
-  enum e
-    {
-      SPECIFIED = 0,
-      ALLEXCEPT,
-    };
+enum e
+{
+  SPECIFIED = 0,
+  ALLEXCEPT,
+};
 }
 
 namespace RecheckPreventionTypes
 {
-  enum e
-  {
-    FIREFOX_LIKE,
-    DELAY_BASED
-  };
+enum e
+{
+  FIREFOX_LIKE,
+  DELAY_BASED
+};
 }
 
 namespace MenuFlagEnum
 {
-  enum e
-  {
-    SIMPLE_ITEM,
-    SEPARATOR,
-    MENU_PARENT,
-    MENU_CHILD,
-  };
+enum e
+{
+  SIMPLE_ITEM,
+  SEPARATOR,
+  MENU_PARENT,
+  MENU_CHILD,
+};
 }
 
 namespace HunspellDictionaryMode
 {
-  enum e
-  {
-    SeparateForAll,
-    SeparateForSingle,
-    UnifiedForAll
-  };
+enum e
+{
+  SeparateForAll,
+  SeparateForSingle,
+  UnifiedForAll
+};
 }
 
 struct MessageBoxInfo
@@ -116,10 +117,10 @@ public:
     bucket_size = 1,
   };
 
-  size_t operator() (const char * a) const
+  size_t operator() (const char *a) const
   {
     size_t Hash = 7;
-    for(unsigned int i = 0; i < strlen (a); i++)
+    for (unsigned int i = 0; i < strlen (a); i++)
     {
       Hash = Hash * 31 + a[i];
     }
@@ -143,8 +144,8 @@ public:
 
   size_t operator() (wchar_t a) const
   {
-    stdext::hash<wchar_t> hash_fn;
-    return hash_fn (towupper (a));
+    size_t l = (size_t) a * (size_t)0x7ff19519;  // this number is prime.
+    return (size_t) l + (size_t) (l >> 16);
   }
 
   bool operator() (wchar_t a, wchar_t b) const
@@ -193,7 +194,7 @@ public:
 #define TM_UPDATE_LANGS_MENU    WM_USER + 1008
 
 typedef stdext::hash_set <char *, hash_compare_strings> WordSet;
-typedef std::set <char *, bool (*)(char *, char *)> SortedWordSet;
+typedef std::set <char *, bool ( *)(char *, char *)> SortedWordSet;
 
 #ifdef UNICODE
 #define DEFAULT_DELIMITERS _T (",.!?\":;{}()[]\\/=+-^$*<>|#$@%&~\u2026\u2116\u2014\u00AB\u00BB\u2013\u2022\u00A9\u203A\u201C\u201D\u00B7\u00A0\u0060\u2192\u00d7")
