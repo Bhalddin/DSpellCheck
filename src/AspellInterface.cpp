@@ -89,6 +89,15 @@ BOOL AspellInterface::IsWorking ()
   return AspellLoaded;
 }
 
+void AspellInterface::SendAspellErorr (AspellCanHaveError *Error)
+{
+  TCHAR *ErrorMsg = 0;
+  SetString (ErrorMsg, aspell_error_message (Error));
+  MessageBoxInfo MsgBox (NppWindow, ErrorMsg, _T ("Aspell Error"), MB_OK | MB_ICONEXCLAMATION);
+  SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
+  CLEAN_AND_ZERO_ARR (ErrorMsg);
+}
+
 void AspellInterface::SetMultipleLanguages (std::vector<TCHAR *> *List)
 {
   if (!AspellLoaded)
@@ -97,18 +106,22 @@ void AspellInterface::SetMultipleLanguages (std::vector<TCHAR *> *List)
   Spellers->clear ();
   for (unsigned int i = 0; i < List->size (); i++)
   {
-    AspellConfig *spell_config = new_aspell_config();
-    aspell_config_replace (spell_config, "encoding", "utf-8");
+    AspellConfig *SpellConfig = new_aspell_config();
+    aspell_config_replace (SpellConfig, "encoding", "utf-8");
     char *Buf = 0;
     SetString (Buf, List->at (i));
-    aspell_config_replace(spell_config, "lang", Buf);
+    aspell_config_replace(SpellConfig, "lang", Buf);
     CLEAN_AND_ZERO_ARR (Buf);
-    AspellCanHaveError *possible_err = new_aspell_speller(spell_config);
-    if (aspell_error_number(possible_err) == 0)
+
+    AspellCanHaveError *PossibleErr = new_aspell_speller(SpellConfig);
+    if (aspell_error_number(PossibleErr) == 0)
     {
-      Spellers->push_back (to_aspell_speller(possible_err));
+      Spellers->push_back (to_aspell_speller(PossibleErr));
     }
-    delete_aspell_config (spell_config);
+    else
+      SendAspellErorr (PossibleErr);
+
+    delete_aspell_config (SpellConfig);
   }
 }
 
@@ -215,6 +228,7 @@ void AspellInterface::AddToDictionary (char *Word, int DictionaryNum)
       SetString (ErrorMsg, aspell_speller_error_message (SingularSpeller));
       MessageBoxInfo MsgBox (NppWindow, ErrorMsg, _T ("Aspell Error"), MB_OK | MB_ICONEXCLAMATION);
       SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
+      CLEAN_AND_ZERO_ARR (ErrorMsg);
     }
   }
   else
@@ -317,9 +331,9 @@ void AspellInterface::SetLanguage (TCHAR *Lang)
     SingularSpeller = 0;
   }
 
-  AspellCanHaveError *possible_err = new_aspell_speller (spell_config);
+  AspellCanHaveError *PossibleErr = new_aspell_speller (spell_config);
 
-  if (aspell_error_number(possible_err) != 0)
+  if (aspell_error_number(PossibleErr) != 0)
   {
     delete_aspell_config (spell_config);
     std::vector<TCHAR *> *LangList = GetLanguageList ();
@@ -332,10 +346,12 @@ void AspellInterface::SetLanguage (TCHAR *Lang)
     else
     {
       SingularSpeller = 0;
+      SendAspellErorr (PossibleErr);
       return;
     }
   }
   else
-    SingularSpeller = to_aspell_speller(possible_err);
+    SingularSpeller = to_aspell_speller(PossibleErr);
+
   delete_aspell_config (spell_config);
 }
