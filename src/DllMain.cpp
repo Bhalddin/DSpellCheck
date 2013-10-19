@@ -62,8 +62,8 @@ void SetRecheckDelay (int Value, int WriteToIni)
 }
 
 BOOL APIENTRY DllMain( HANDLE hModule,
-                      DWORD  reasonForCall,
-                      LPVOID lpReserved )
+                       DWORD  reasonForCall,
+                       LPVOID lpReserved )
 {
   HModule = hModule;
 
@@ -91,7 +91,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 }
 WPARAM LastHwnd  = NULL;
 LPARAM LastCoords = 0;
-std::vector <SuggestionsMenuItem*> *MenuList = NULL;
+std::vector <SuggestionsMenuItem *> *MenuList = NULL;
 // Ok, trying to use window subclassing to handle messages
 LRESULT CALLBACK SubWndProcNotepad(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
@@ -128,6 +128,19 @@ LRESULT CALLBACK SubWndProcNotepad(HWND hWnd, UINT Message, WPARAM wParam, LPARA
         PostMessageToMainThread (TM_MENU_RESULT, wParam, 0);
     }
     break;
+  case WM_NOTIFY:
+    if (((LPNMHDR)lParam)->code == NM_RCLICK)
+    {
+
+      if (MenuList)
+      {
+        for (unsigned int i = 0; i < MenuList->size (); i++)
+          CLEAN_AND_ZERO ((*MenuList)[i]);
+
+        CLEAN_AND_ZERO (MenuList);
+      }
+    }
+    break;
   case WM_CONTEXTMENU:
     LastHwnd = wParam;
     LastCoords = lParam;
@@ -140,20 +153,20 @@ LRESULT CALLBACK SubWndProcNotepad(HWND hWnd, UINT Message, WPARAM wParam, LPARA
     break;
   }
 
-  if (Message!= 0)
+  if (Message != 0)
+  {
+    if (Message == GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX))
     {
-      if (Message == GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX))
-        {
-          MessageBoxInfo *MsgBox = (MessageBoxInfo *) wParam;
-          DWORD Result = MessageBox (MsgBox->hWnd, MsgBox->Message, MsgBox->Title, MsgBox->Flags);
-          return Result;
-        }
-      else if (Message == GetCustomGUIMessageId (CustomGUIMessage::SHOW_CALCULATED_MENU))
-        {
-          MenuList = (std::vector <SuggestionsMenuItem*> *) lParam;
-          return ::CallWindowProc(wndProcNotepad, hWnd, WM_CONTEXTMENU, LastHwnd, LastCoords);
-        }
+      MessageBoxInfo *MsgBox = (MessageBoxInfo *) wParam;
+      DWORD Result = MessageBox (MsgBox->hWnd, MsgBox->Message, MsgBox->Title, MsgBox->Flags);
+      return Result;
     }
+    else if (Message == GetCustomGUIMessageId (CustomGUIMessage::SHOW_CALCULATED_MENU))
+    {
+      MenuList = (std::vector <SuggestionsMenuItem *> *) lParam;
+      return ::CallWindowProc(wndProcNotepad, hWnd, WM_CONTEXTMENU, LastHwnd, LastCoords);
+    }
+  }
 
   /*
   TCHAR Buf[DEFAULT_BUF_SIZE];
@@ -172,12 +185,12 @@ extern "C" __declspec(dllexport) void setInfo(NppData notpadPlusData)
   wndProcNotepad = (WNDPROC)::SetWindowLongPtr(nppData._nppHandle, GWL_WNDPROC, (LPARAM)SubWndProcNotepad);
 }
 
-extern "C" __declspec(dllexport) const TCHAR * getName()
+extern "C" __declspec(dllexport) const TCHAR *getName()
 {
   return NPP_PLUGIN_NAME;
 }
 
-extern "C" __declspec(dllexport) FuncItem * getFuncsArray(int *nbF)
+extern "C" __declspec(dllexport) FuncItem *getFuncsArray(int *nbF)
 {
   *nbF = nbFunc;
   return funcItem;
@@ -195,7 +208,7 @@ static void AddToQueue (long Start, long End)
 VOID CALLBACK ExecuteQueue (
   PVOID lpParameter,
   BOOLEAN TimerOrWaitFired
-  )
+)
 {
   /*
   std::vector<std::pair <long, long>>::iterator Iterator;
@@ -264,7 +277,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
     if (notifyCode->updated & SC_UPDATE_SELECTION)
       SendEvent (EID_SELECTION_CHANGED);
 
-    if(notifyCode->updated & (SC_UPDATE_CONTENT)  && !Timer && !RestylingCausedRecheckWasDone) // If restyling wasn't caused by user input...
+    if (notifyCode->updated & (SC_UPDATE_CONTENT)  && !Timer && !RestylingCausedRecheckWasDone) // If restyling wasn't caused by user input...
     {
       SendEvent (EID_RECHECK_VISIBLE);
       RestylingCausedRecheckWasDone = TRUE;
@@ -278,7 +291,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
     break;
 
   case SCN_MODIFIED:
-    if(notifyCode->modificationType & (SC_MOD_DELETETEXT | SC_MOD_INSERTTEXT))
+    if (notifyCode->modificationType & (SC_MOD_DELETETEXT | SC_MOD_INSERTTEXT))
     {
       // SendEvent (EID_HIDE_SUGGESTIONS_BOX);
       long Start = 0, End = 0;
@@ -327,8 +340,8 @@ void InitNeededDialogs (int wParam)
   // A little bit of code duplication here :(
   int MenuId = wParam;
   if ((!GetUseAllocatedIds () && HIBYTE (MenuId) != DSPELLCHECK_MENU_ID &&
-    HIBYTE (MenuId) != LANGUAGE_MENU_ID)
-    || (GetUseAllocatedIds () && ((int) MenuId < GetContextMenuIdStart () || (int) MenuId > GetContextMenuIdStart () + MENU_IDS_TOTAL)))
+       HIBYTE (MenuId) != LANGUAGE_MENU_ID)
+      || (GetUseAllocatedIds () && ((int) MenuId < GetContextMenuIdStart () || (int) MenuId > GetContextMenuIdStart () + MENU_IDS_TOTAL)))
     return;
   int UsedMenuId = 0;
   if (GetUseAllocatedIds ())
