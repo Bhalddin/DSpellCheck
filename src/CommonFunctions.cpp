@@ -747,6 +747,11 @@ static BOOL _max (int a, int b)
   return a > b ? a : b;
 }
 
+static int SubstitionCost = 2;
+static int TranspositionCost = 0;
+static int DeletionCost = 3;
+static int InsertionCost = 1;
+
 static int DamerauLevenshteinDistanceUtf8 (char *Source, char *Target)
 {
   size_t SourceLength = Utf8Length (Source);
@@ -816,10 +821,10 @@ static int DamerauLevenshteinDistanceUtf8 (char *Source, char *Target)
       }
       else
       {
-        Score[(i + 1) * H + (j + 1)] = std::min<int> (Score[i * H + j], std::min<int> (Score[(i + 1) * H + j], Score[i * H + (j + 1)])) + 1;
+        Score[(i + 1) * H + (j + 1)] = std::min<int> (Score[i * H + j] + SubstitionCost, std::min<int> (Score[(i + 1) * H + j] + InsertionCost, Score[i * H + (j + 1)] + DeletionCost));
       }
 
-      Score[(i + 1) * H + (j + 1)] = std::min<int> (Score[(i + 1) * H + (j + 1)], Score[i1 * H + j1] + (i - i1 - 1) + 1 + (j - j1 - 1));
+      Score[(i + 1) * H + (j + 1)] = std::min<int> (Score[(i + 1) * H + (j + 1)], Score[i1 * H + j1] + (i - i1 - 1) + TranspositionCost + (j - j1 - 1));
     }
     char *TempString = 0;
     SetStringToFirstUtf8Char (TempString, SourceIterator);
@@ -901,10 +906,10 @@ static int DamerauLevenshteinDistanceWchar (wchar_t *Source, wchar_t *Target)
       }
       else
       {
-        Score[(i + 1) * H + (j + 1)] = std::min<int> (Score[i * H + j], std::min<int> (Score[(i + 1) * H + j], Score[i * H + (j + 1)])) + 1;
+        Score[(i + 1) * H + (j + 1)] = std::min<int> (Score[i * H + j] + SubstitionCost, std::min<int> (Score[(i + 1) * H + j] + InsertionCost, Score[i * H + (j + 1)]) + DeletionCost) ;
       }
 
-      Score[(i + 1) * H + (j + 1)] = std::min<int> (Score[(i + 1) * H + (j + 1)], Score[i1 * H + j1] + (i - i1 - 1) + 1 + (j - j1 - 1));
+      Score[(i + 1) * H + (j + 1)] = std::min<int> (Score[(i + 1) * H + (j + 1)], Score[i1 * H + j1] + (i - i1 - 1) + TranspositionCost + (j - j1 - 1));
     }
     Sd[*SourceIterator] = i;
   }
@@ -913,6 +918,51 @@ static int DamerauLevenshteinDistanceWchar (wchar_t *Source, wchar_t *Target)
   CLEAN_AND_ZERO_ARR (Score);
 
   return Result;
+}
+
+// Second version took from repository of git itself (https://github.com/git/git/blob/master/levenshtein.c)
+int DamerauLevenshteinDistanceWchar2 (const wchar_t *string1, const wchar_t *string2, int w, int s, int a, int d)
+{
+  int len1 = wcslen (string1), len2 = wcslen (string2);
+  int *row0 = new int[len2 + 1];
+  int *row1 = new int[len2 + 1];
+  int *row2 = new int[len2 + 1];
+  int i, j;
+
+  for (j = 0; j <= len2; j++)
+    row1[j] = j * a;
+  for (i = 0; i < len1; i++) {
+    int *dummy;
+
+    row2[0] = (i + 1) * d;
+    for (j = 0; j < len2; j++) {
+      /* substitution */
+      row2[j + 1] = row1[j] + s * (towupper (string1[i]) != towupper (string2[j]));
+      /* swap */
+      if (i > 0 && j > 0 && towupper (string1[i - 1]) == towupper (string2[j]) &&
+        towupper (string1[i]) == towupper (string2[j - 1]) &&
+        row2[j + 1] > row0[j - 1] + w)
+        row2[j + 1] = row0[j - 1] + w;
+      /* deletion */
+      if (row2[j + 1] > row1[j + 1] + d)
+        row2[j + 1] = row1[j + 1] + d;
+      /* insertion */
+      if (row2[j + 1] > row2[j] + a)
+        row2[j + 1] = row2[j] + a;
+    }
+
+    dummy = row0;
+    row0 = row1;
+    row1 = row2;
+    row2 = dummy;
+  }
+
+  i = row1[len2];
+  CLEAN_AND_ZERO_ARR (row0);
+  CLEAN_AND_ZERO_ARR (row1);
+  CLEAN_AND_ZERO_ARR (row2);
+
+  return i;
 }
 
 class LevenshteinSortComparatorUtf8
@@ -944,7 +994,9 @@ public:
   DamerauLevenshteinSortComparatorWchar (wchar_t *TArg) { T = TArg; }
   bool operator()(wchar_t *S1, wchar_t *S2)
   {
-    return (DamerauLevenshteinDistanceWchar (S1, T) < DamerauLevenshteinDistanceWchar (S2, T));
+    // 0, 2, 1, 3
+    return (DamerauLevenshteinDistanceWchar2 (S1, T, TranspositionCost, SubstitionCost, InsertionCost, DeletionCost) <
+            DamerauLevenshteinDistanceWchar2 (S2, T, TranspositionCost, SubstitionCost, InsertionCost, DeletionCost));
   }
 };
 
