@@ -2014,6 +2014,8 @@ BOOL SpellChecker::GetWordUnderCursorIsRight (long &Pos, long &Length, BOOL UseT
   BOOL Ret = TRUE;
   POINT p;
   int initCharPos = -1;
+  int SelectionStart = 0;
+  int SelectionEnd = 0;
 
   if (!UseTextCursor)
   {
@@ -2025,7 +2027,11 @@ BOOL SpellChecker::GetWordUnderCursorIsRight (long &Pos, long &Length, BOOL UseT
     initCharPos = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_CHARPOSITIONFROMPOINTCLOSE, p.x, p.y);
   }
   else
+  {
+    SelectionStart = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETSELECTIONSTART);
+    SelectionEnd = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETSELECTIONEND);
     initCharPos = SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETCURRENTPOS);
+  }
 
   if (initCharPos != -1)
   {
@@ -2065,6 +2071,11 @@ BOOL SpellChecker::GetWordUnderCursorIsRight (long &Pos, long &Length, BOOL UseT
       long PosEnd = Pos + strlen (WordFound);
       CheckSpecialDelimeters (Word, Pos, PosEnd);
       long WordLen = PosEnd - Pos;
+      if (SelectionStart != SelectionEnd && (SelectionStart != Pos || SelectionEnd != Pos + WordLen))
+        {
+          CLEAN_AND_ZERO_ARR (Buf);
+          return TRUE;
+        }
       if (CheckWord (Word, Pos, Pos + WordLen - 1))
       {
         Ret = TRUE;
