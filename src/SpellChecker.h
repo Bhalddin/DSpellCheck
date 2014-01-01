@@ -177,7 +177,6 @@ private:
   void HideSuggestionBox ();
   void GetLimitsAndRecheckModified ();
   BOOL CheckTextNeeded ();
-  int CheckWordInCommentOrString (int Style);
   void WriteSetting ();
   int GetStyle (int Pos);
   void RefreshUnderlineStyle ();

@@ -1,11 +1,11 @@
-cmake_minimum_required (VERSION 2.6) 
+cmake_minimum_required (VERSION 2.6)
 project (DSpellCheck)
 set (DSpellCheck_VERSION_MAJOR 1)
 set (DSpellCheck_VERSION_MINOR 0)
 set (SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 set (BIN_DIR ${PROJECT_SOURCE_DIR})
 configure_file ("${SRC_DIR}/config.h.in" "${SRC_DIR}/config.h")
-include_directories (${SRC_DIR}/Controls) 
+include_directories (${SRC_DIR}/Controls)
 include_directories (${SRC_DIR})
 include_directories (Hunspell/src)
 include_directories (minizip/)
@@ -33,23 +33,23 @@ if ( MSVC )
    	endif (NOT DEFINED DEBUG_OUTPUT_PATH)
     # set ( CMAKE_PROPERTIES LIBRARY_OUTPUT_DIRECTORY_RELEASE ${RELEASE_OUTPUT_DIR} )
     set (add_definitions, UNICODE)
-    set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG} ) 
+    set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG} )
 	set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG} )
 else ( MSVC )
 # For possible MinGW compilation
-	set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${GENERIC_OUTPUT_DIR} ) 
+	set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${GENERIC_OUTPUT_DIR} )
 	set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${GENERIC_OUTPUT_DIR} )
 	set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${GENERIC_OUTPUT_DIR} )
 endif ( MSVC )
 
-set (list_of_files_DSpellCheck 
-  ${SRC_DIR}/Plugin.cpp 
+set (list_of_files_DSpellCheck
+  ${SRC_DIR}/Plugin.cpp
   ${SRC_DIR}/Plugin.h
-  ${SRC_DIR}/SpellChecker.cpp 
+  ${SRC_DIR}/SpellChecker.cpp
   ${SRC_DIR}/SpellChecker.h
-  ${SRC_DIR}/DllMain.cpp 
+  ${SRC_DIR}/DllMain.cpp
   ${SRC_DIR}/menuCmdID.h
-  ${SRC_DIR}/scintilla.h 
+  ${SRC_DIR}/scintilla.h
   ${SRC_DIR}/SciLexer.h
   ${SRC_DIR}/PluginInterface.h
   ${SRC_DIR}/Notepad_plus_msgs.h
@@ -86,6 +86,8 @@ set (list_of_files_DSpellCheck
   ${SRC_DIR}/AspellInterface.h
   ${SRC_DIR}/HunspellInterface.cpp
   ${SRC_DIR}/HunspellInterface.h
+  ${SRC_DIR}/ScintillaStyleSwitches.cpp
+  ${SRC_DIR}/ScintillaStyleSwitches.h
   ${SRC_DIR}/Controls/CheckedList/CheckedList.h
   ${SRC_DIR}/Controls/CheckedList/CheckedList.cpp
   ${SRC_DIR}/Controls/StaticDialog/StaticDialog.cpp
@@ -112,13 +114,13 @@ if(MSVC)
         string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
         string(REGEX REPLACE "/MDd" "/MTd" ${flag_var} "${${flag_var}}")
     endforeach(flag_var)
-    SET (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}" CACHE STRING "MSVC C Debug MT flags " FORCE)    
+    SET (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}" CACHE STRING "MSVC C Debug MT flags " FORCE)
     SET (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}" CACHE STRING "MSVC CXX Debug MT flags " FORCE)
     SET (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}" CACHE STRING "MSVC C Release MT flags " FORCE)
     SET (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}" CACHE STRING "MSVC CXX Release MT flags " FORCE)
-    SET (CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL}" CACHE STRING "MSVC C Debug MT flags " FORCE)    
+    SET (CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL}" CACHE STRING "MSVC C Debug MT flags " FORCE)
     SET (CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL}" CACHE STRING "MSVC C Release MT flags " FORCE)
-    SET (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}" CACHE STRING "MSVC CXX Debug MT flags " FORCE)    
+    SET (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}" CACHE STRING "MSVC CXX Debug MT flags " FORCE)
     SET (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}" CACHE STRING "MSVC CXX Release MT flags " FORCE)
 endif()
 
@@ -133,6 +135,6 @@ target_link_libraries (DSpellCheck optimized ${PROJECT_BINARY_DIR}/ftpclient/Rel
 
 
 include (PrecompiledHeader.cmake)
-add_precompiled_header(DSpellCheck PrecompiledHeader.h FORCEINCLUDE) 
+add_precompiled_header(DSpellCheck PrecompiledHeader.h FORCEINCLUDE)
 
 target_link_libraries(DSpellCheck ${LINK_LIBRARY})
