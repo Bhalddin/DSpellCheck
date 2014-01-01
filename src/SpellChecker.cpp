@@ -1227,7 +1227,7 @@ BOOL SpellChecker::GetWordUnderCursorIsRight (long &Pos, long &Length, BOOL UseT
           CLEAN_AND_ZERO_ARR (Buf);
           return TRUE;
         }
-      if (CheckWord (Word, Pos, Pos + WordLen - 1))
+      if (CheckWord (Word, Pos, Pos + WordLen - 1, TRUE))
       {
         Ret = TRUE;
       }
@@ -2469,13 +2469,13 @@ void SpellChecker::ResetHotSpotCache ()
   memset (HotSpotCache, -1, sizeof (HotSpotCache));
 }
 
-BOOL SpellChecker::CheckWord (char *Word, long Start, long End)
+BOOL SpellChecker::CheckWord (char *Word, long Start, long End, BOOL ignoreProtection)
 {
   BOOL res = FALSE;
   if (!CurrentSpeller->IsWorking () || !Word || !*Word)
     return TRUE;
 
-  if (Start <= LastCurPos && LastCurPos <= End && WordNearCursorProtection && RecheckPreventionType == RecheckPreventionTypes::FIREFOX_LIKE)
+  if (Start <= LastCurPos && LastCurPos <= End && WordNearCursorProtection && RecheckPreventionType == RecheckPreventionTypes::FIREFOX_LIKE && !ignoreProtection)
     return TRUE;
   // Well Numbers have same codes for ANSI and Unicode I guess, so
   // If word contains number then it's probably just a number or some crazy name
@@ -2779,7 +2779,7 @@ BOOL SpellChecker::CheckText (char *InputText, long Offset, CheckTextMode Mode)
         goto newtoken;
 
 
-      if (!CheckWord (token, WordStart, WordEnd))
+      if (!CheckWord (token, WordStart, WordEnd, FALSE))
       {
         switch (Mode)
         {

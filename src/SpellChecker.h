@@ -156,7 +156,7 @@ private:
   const TCHAR *GetLanguage ();
   void CallLangContextMenu ();
   void GetDefaultHunspellPath (TCHAR *&Path);
-  BOOL CheckWord (char *Word, long Start, long End);
+  BOOL CheckWord (char *Word, long Start, long End, BOOL ignoreProtection = FALSE);
   void GetVisibleLimits(long &Start, long &Finish);
   char *GetVisibleText(long *offset, BOOL NotIntersectionOnly = FALSE);
   char *GetDocumentText ();

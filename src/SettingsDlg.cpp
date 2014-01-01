@@ -734,7 +734,7 @@ BOOL CALLBACK AdvancedDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
       CreateToolTip (IDC_REMOVE_ENDING_APOSTROPHE, _hSelf, _T ("Words like this are mostly mean plural possessive form in English, if you want to add such forms of words to dictionary manually, please uncheck"));
 
       ComboBox_AddString (HDelimiterStyle, _T ("Only specified symbols (plus \\r, \\n, \\t and spaces)"));
-      ComboBox_AddString (HDelimiterStyle, _T ("All symbols except letters, numbers and ones specified"));
+      ComboBox_AddString (HDelimiterStyle, _T ("All symbols except 0-9, letters and ones specified"));
       ComboBox_SetCurSel (HDelimiterStyle, 0);
       ComboBox_AddString (HRecheckPreventionType, _T ("Firefox-like"));
       ComboBox_AddString (HRecheckPreventionType, _T ("Delay based"));
