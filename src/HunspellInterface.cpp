@@ -45,10 +45,10 @@ static BOOL ListFiles(wchar_t *path, wchar_t *mask, std::vector<wchar_t *> &file
   {
     path = directories->top();
     CLEAN_AND_ZERO_ARR (spec);
-    spec = new wchar_t [_tcslen (path) + 1 + _tcslen (mask) + 1];
-    _tcscpy (spec, path);
-    _tcscat (spec, _T ("\\"));
-    _tcscat (spec, mask);
+    spec = new wchar_t [wcslen (path) + 1 + wcslen (mask) + 1];
+    wcscpy (spec, path);
+    wcscat (spec, L"\\");
+    wcscat (spec, mask);
     directories->pop();
 
     hFind = FindFirstFile(spec, &ffd);
@@ -63,10 +63,10 @@ static BOOL ListFiles(wchar_t *path, wchar_t *mask, std::vector<wchar_t *> &file
       if (wcscmp(ffd.cFileName, L".") != 0 &&
           wcscmp(ffd.cFileName, L"..") != 0)
       {
-        wchar_t *buf = new wchar_t [_tcslen (path) + 1 + _tcslen (ffd.cFileName) + 1];
-        _tcscpy (buf, path );
-        _tcscat (buf, _T ("\\"));
-        _tcscat (buf, ffd.cFileName);
+        wchar_t *buf = new wchar_t [wcslen (path) + 1 + wcslen (ffd.cFileName) + 1];
+        wcscpy (buf, path );
+        wcscat (buf, L"\\");
+        wcscat (buf, ffd.cFileName);
         if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
         {
           directories->push(buf);
@@ -266,13 +266,13 @@ std::vector<wchar_t *> *HunspellInterface::GetLanguageList ()
 
 DicInfo HunspellInterface::CreateHunspell (wchar_t *Name, int Type)
 {
-  int size = (Type ? _tcslen (SysDicDir) : _tcslen (DicDir)) + 1 + _tcslen (Name) + 1 + 3 + 1; // + . + aff/dic + /0
+  int size = (Type ? wcslen (SysDicDir) : wcslen (DicDir)) + 1 + wcslen (Name) + 1 + 3 + 1; // + . + aff/dic + /0
   wchar_t *AffBuf = new wchar_t [size];
   char *AffBufAnsi = 0;
   char *DicBufAnsi = 0;
-  _tcscpy (AffBuf, (Type ? SysDicDir : DicDir));
-  _tcscat (AffBuf, _T ("\\"));
-  _tcscat (AffBuf, Name);
+  wcscpy (AffBuf, (Type ? SysDicDir : DicDir));
+  wcscat (AffBuf, L"\\");
+  wcscat (AffBuf, Name);
   {
     std::map <wchar_t *, DicInfo, bool ( *)(wchar_t *, wchar_t *)>::iterator it = AllHunspells->find (AffBuf);
     if (it != AllHunspells->end ())
@@ -282,17 +282,17 @@ DicInfo HunspellInterface::CreateHunspell (wchar_t *Name, int Type)
     }
   }
   wchar_t *DicBuf = new wchar_t [size];
-  _tcscat (AffBuf, _T (".aff"));
-  _tcscpy (DicBuf, Type ? SysDicDir : DicDir);
-  _tcscat (DicBuf, _T ("\\"));
-  _tcscat (DicBuf, Name);
-  _tcscat (DicBuf, _T (".dic"));
+  wcscat (AffBuf, L".aff");
+  wcscpy (DicBuf, Type ? SysDicDir : DicDir);
+  wcscat (DicBuf, L"\\");
+  wcscat (DicBuf, Name);
+  wcscat (DicBuf, L".dic");
   SetString (AffBufAnsi, AffBuf);
   SetString (DicBufAnsi, DicBuf);
 
   Hunspell *NewHunspell = new Hunspell (AffBufAnsi, DicBufAnsi);
   wchar_t *NewName = 0;
-  AffBuf[_tcslen (AffBuf) - 4] = _T ('\0');
+  AffBuf[wcslen (AffBuf) - 4] = L'\0';
   SetString (NewName, AffBuf); // Without aff and dic
   DicInfo NewDic;
   char *DicEnconding = NewHunspell->get_dic_encoding ();
@@ -305,12 +305,12 @@ DicInfo HunspellInterface::CreateHunspell (wchar_t *Name, int Type)
   NewDic.ConverterWCHAR = iconv_open (DicEnconding, "UCS-2LE");
   NewDic.BackConverterWCHAR = iconv_open ("UCS-2LE", DicEnconding);
   NewDic.LocalDic = new WordSet ();
-  NewDic.LocalDicPath = new wchar_t [_tcslen (DicDir) + 1 + _tcslen (Name) + 1 + 3 + 1]; // Local Dic path always points to non-system directory
+  NewDic.LocalDicPath = new wchar_t [wcslen (DicDir) + 1 + wcslen (Name) + 1 + 3 + 1]; // Local Dic path always points to non-system directory
   NewDic.LocalDicPath[0] = '\0';
-  _tcscat (NewDic.LocalDicPath, DicDir);
-  _tcscat (NewDic.LocalDicPath, _T ("\\"));
-  _tcscat (NewDic.LocalDicPath,  Name);
-  _tcscat (NewDic.LocalDicPath,  _T (".usr"));
+  wcscat (NewDic.LocalDicPath, DicDir);
+  wcscat (NewDic.LocalDicPath, L"\\");
+  wcscat (NewDic.LocalDicPath,  Name);
+  wcscat (NewDic.LocalDicPath,  L".usr");
 
   ReadUserDic (NewDic.LocalDic, NewDic.LocalDicPath);
   NewDic.Speller = NewHunspell;
@@ -480,13 +480,13 @@ void HunspellInterface::WriteUserDic (WordSet *Target, wchar_t *Path)
   wchar_t *LastSlashPos = GetLastSlashPosition (Path);
   if (!LastSlashPos)
     return;
-  *LastSlashPos = _T ('\0');
+  *LastSlashPos = L'\0';
   CheckForDirectoryExistence (Path);
-  *LastSlashPos = _T ('\\');
+  *LastSlashPos = L'\\';
 
   SetFileAttributes (Path, FILE_ATTRIBUTE_NORMAL);
 
-  Fp = _tfopen (Path, _T ("w"));
+  Fp = _wfopen (Path, L"w");
   if (!Fp)
     return;
   {
@@ -510,7 +510,7 @@ void HunspellInterface::ReadUserDic (WordSet *Target, wchar_t *Path)
 {
   FILE *Fp = 0;
   int WordNum = 0;
-  Fp = _tfopen (Path, _T ("r"));
+  Fp = _wfopen (Path, L"r");
   if (!Fp)
   {
     return;
@@ -543,7 +543,7 @@ void HunspellInterface::ReadUserDic (WordSet *Target, wchar_t *Path)
 
 void HunspellInterface::MessageBoxWordCannotBeAdded ()
 {
-  MessageBoxInfo MsgBox (NppWindow, _T ("Sadly, this word contains symbols out of current dictionary encoding, thus it cannot be added to user dictionary. You can convert this dictionary to UTF-8 or choose the different one with appropriate encoding."), _T ("Word cannot be added"), MB_OK | MB_ICONWARNING);
+  MessageBoxInfo MsgBox (NppWindow, L"Sadly, this word contains symbols out of current dictionary encoding, thus it cannot be added to user dictionary. You can convert this dictionary to UTF-8 or choose the different one with appropriate encoding.", L"Word cannot be added", MB_OK | MB_ICONWARNING);
   SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
 }
 
@@ -568,14 +568,14 @@ void HunspellInterface::AddToDictionary (char *Word, int DictionaryNum)
     wchar_t *LastSlashPos = GetLastSlashPosition (DicPath);
     if (!LastSlashPos)
       return;
-    *LastSlashPos = _T ('\0');
+    *LastSlashPos = L'\0';
     CheckForDirectoryExistence (DicPath);
-    *LastSlashPos = _T ('\\');
+    *LastSlashPos = L'\\';
     // If there's no file then we're checking if we can create it, there's no harm in it
-    int LocalDicFileHandle = _topen (DicPath, _O_CREAT | _O_BINARY | _O_WRONLY);
+    int LocalDicFileHandle = _wopen (DicPath, _O_CREAT | _O_BINARY | _O_WRONLY);
     if (LocalDicFileHandle == -1)
     {
-      MessageBoxInfo MsgBox (NppWindow, _T ("User dictionary cannot be written, please check if you have access for writing into your dictionary directory, otherwise you can change it or run Notepad++ as administrator."), _T ("User dictionary cannot be saved"), MB_OK | MB_ICONWARNING);
+      MessageBoxInfo MsgBox (NppWindow, L"User dictionary cannot be written, please check if you have access for writing into your dictionary directory, otherwise you can change it or run Notepad++ as administrator.", L"User dictionary cannot be saved", MB_OK | MB_ICONWARNING);
       SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
     }
     else
@@ -587,10 +587,10 @@ void HunspellInterface::AddToDictionary (char *Word, int DictionaryNum)
   else
   {
     SetFileAttributes (DicPath, FILE_ATTRIBUTE_NORMAL);
-    int LocalDicFileHandle = _topen (DicPath, _O_APPEND | _O_BINARY | _O_WRONLY);
+    int LocalDicFileHandle = _wopen (DicPath, _O_APPEND | _O_BINARY | _O_WRONLY);
     if (LocalDicFileHandle == -1)
     {
-      MessageBoxInfo MsgBox (NppWindow, _T ("User dictionary cannot be written, please check if you have access for writing into your dictionary directory, otherwise you can change it or run Notepad++ as administrator."), _T ("User dictionary cannot be saved"), MB_OK | MB_ICONWARNING);
+      MessageBoxInfo MsgBox (NppWindow, L"User dictionary cannot be written, please check if you have access for writing into your dictionary directory, otherwise you can change it or run Notepad++ as administrator.", L"User dictionary cannot be saved", MB_OK | MB_ICONWARNING);
       SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
     }
     else
@@ -722,10 +722,10 @@ void HunspellInterface::SetDirectory (wchar_t *Dir)
 {
   CLEAN_AND_ZERO_ARR (UserDicPath);
   UserDicPath = new wchar_t [DEFAULT_BUF_SIZE];
-  _tcscpy (UserDicPath, Dir);
-  if (UserDicPath[_tcslen (UserDicPath) - 1] != _T ('\\'))
-    _tcscat (UserDicPath, _T ("\\"));
-  _tcscat (UserDicPath, _T ("UserDic.dic")); // Should be tunable really
+  wcscpy (UserDicPath, Dir);
+  if (UserDicPath[wcslen (UserDicPath) - 1] != L'\\')
+    wcscat (UserDicPath, L"\\");
+  wcscat (UserDicPath, L"UserDic.dic"); // Should be tunable really
   ReadUserDic (Memorized, UserDicPath); // We should load user dictionary first.
 
   InitialReadingBeenDone = FALSE;
@@ -743,7 +743,7 @@ void HunspellInterface::SetDirectory (wchar_t *Dir)
   DicList = new std::set <AvailableLangInfo>;
   IsHunspellWorking = TRUE;
 
-  BOOL Res = ListFiles (Dir, _T ("*.*"), *FileList, _T ("*.aff"));
+  BOOL Res = ListFiles (Dir, L"*.*", *FileList, L"*.aff");
   if (!Res)
   {
     CLEAN_AND_ZERO_STRING_VECTOR (FileList);
@@ -754,12 +754,12 @@ void HunspellInterface::SetDirectory (wchar_t *Dir)
   {
     wchar_t *Buf = 0;
     SetString (Buf, FileList->at (i));
-    wchar_t *DotPointer = _tcsrchr (Buf, _T ('.'));
-    _tcscpy (DotPointer, _T (".dic"));
+    wchar_t *DotPointer = wcschr (Buf, L'.');
+    wcscpy (DotPointer, L".dic");
     if (PathFileExists (Buf))
     {
       *DotPointer = 0;
-      wchar_t *SlashPointer = _tcsrchr (Buf, _T ('\\'));
+      wchar_t *SlashPointer = wcschr (Buf, L'\\');
       wchar_t *TBuf = 0;
       SetString (TBuf, SlashPointer + 1);
       AvailableLangInfo NewX;
@@ -783,7 +783,7 @@ void HunspellInterface::SetAdditionalDirectory (wchar_t *Dir)
     return;
   IsHunspellWorking = TRUE;
 
-  BOOL Res = ListFiles (Dir, _T ("*.*"), *FileList, _T ("*.aff"));
+  BOOL Res = ListFiles (Dir, L"*.*", *FileList, L"*.aff");
   if (!Res)
   {
     CLEAN_AND_ZERO_STRING_VECTOR (FileList);
@@ -794,12 +794,12 @@ void HunspellInterface::SetAdditionalDirectory (wchar_t *Dir)
   {
     wchar_t *Buf = 0;
     SetString (Buf, FileList->at (i));
-    wchar_t *DotPointer = _tcsrchr (Buf, _T ('.'));
-    _tcscpy (DotPointer, _T (".dic"));
+    wchar_t *DotPointer = wcschr (Buf, L'.');
+    wcscpy (DotPointer, L".dic");
     if (PathFileExists (Buf))
     {
       *DotPointer = 0;
-      wchar_t *SlashPointer = _tcsrchr (Buf, _T ('\\'));
+      wchar_t *SlashPointer = wcschr (Buf, L'\\');
       wchar_t *TBuf = 0;
       SetString (TBuf, SlashPointer + 1);
       AvailableLangInfo NewX;
@@ -818,10 +818,10 @@ void HunspellInterface::SetAdditionalDirectory (wchar_t *Dir)
 
   CLEAN_AND_ZERO_ARR (SystemWrongDicPath);
   SystemWrongDicPath = new wchar_t[DEFAULT_BUF_SIZE]; // Reading system path unified dic too
-  _tcscpy (SystemWrongDicPath, Dir);
-  if (SystemWrongDicPath[_tcslen (SystemWrongDicPath) - 1] != _T ('\\'))
-    _tcscat (SystemWrongDicPath, _T ("\\"));
-  _tcscat (SystemWrongDicPath, _T ("UserDic.dic")); // Should be tunable really
+  wcscpy (SystemWrongDicPath, Dir);
+  if (SystemWrongDicPath[wcslen (SystemWrongDicPath) - 1] != L'\\')
+    wcscat (SystemWrongDicPath, L"\\");
+  wcscat (SystemWrongDicPath, L"UserDic.dic"); // Should be tunable really
   ReadUserDic (Memorized, SystemWrongDicPath); // We should load user dictionary first.
 
   CLEAN_AND_ZERO_STRING_VECTOR (FileList);

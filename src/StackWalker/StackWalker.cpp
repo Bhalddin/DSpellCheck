@@ -173,7 +173,7 @@ DWORD64
 #define strcpy_s strcpy
 #define strcat_s(dst, len, src) strcat(dst, src)
 #define _snprintf_s _snprintf
-#define _tcscat_s _tcscat
+#define wcscat_s wcscat
 #endif
 
 // Normally it should be enough to use 'CONTEXT_FULL' (better would be 'CONTEXT_ALL')
@@ -225,13 +225,13 @@ public:
     // But before wqe do this, we first check if the ".local" file exists
     if (GetModuleFileName(NULL, szTemp, 4096) > 0)
     {
-      _tcscat_s(szTemp, _T(".local"));
+      wcscat_s(szTemp, L".local");
       if (GetFileAttributes(szTemp) == INVALID_FILE_ATTRIBUTES)
       {
         // ".local" file does not exist, so we can try to load the dbghelp.dll from the "Debugging Tools for Windows"
-        if (GetEnvironmentVariable(_T("ProgramFiles"), szTemp, 4096) > 0)
+        if (GetEnvironmentVariable(L"ProgramFiles", szTemp, 4096) > 0)
         {
-          _tcscat_s(szTemp, _T("\\Debugging Tools for Windows\\dbghelp.dll"));
+          wcscat_s(szTemp, L"\\Debugging Tools for Windows\\dbghelp.dll");
           // now check if the file exists:
           if (GetFileAttributes(szTemp) != INVALID_FILE_ATTRIBUTES)
           {
@@ -239,9 +239,9 @@ public:
           }
         }
           // Still not found? Then try to load the 64-Bit version:
-        if ( (m_hDbhHelp == NULL) && (GetEnvironmentVariable(_T("ProgramFiles"), szTemp, 4096) > 0) )
+        if ( (m_hDbhHelp == NULL) && (GetEnvironmentVariable(L"ProgramFiles", szTemp, 4096) > 0) )
         {
-          _tcscat_s(szTemp, _T("\\Debugging Tools for Windows 64-Bit\\dbghelp.dll"));
+          wcscat_s(szTemp, L"\\Debugging Tools for Windows 64-Bit\\dbghelp.dll");
           if (GetFileAttributes(szTemp) != INVALID_FILE_ATTRIBUTES)
           {
             m_hDbhHelp = LoadLibrary(szTemp);
@@ -250,7 +250,7 @@ public:
       }
     }
     if (m_hDbhHelp == NULL)  // if not already loaded, try to load a default-one
-      m_hDbhHelp = LoadLibrary( _T("dbghelp.dll") );
+      m_hDbhHelp = LoadLibrary( L"dbghelp.dll" );
     if (m_hDbhHelp == NULL)
       return FALSE;
     pSI = (tSI) GetProcAddress(m_hDbhHelp, "SymInitialize" );
@@ -456,7 +456,7 @@ private:
     typedef BOOL (__stdcall *tM32N)(HANDLE hSnapshot, LPMODULEENTRY32 lpme);
 
     // try both dlls...
-    const wchar_t *dllname[] = { _T("kernel32.dll"), _T("tlhelp32.dll") };
+    const wchar_t *dllname[] = { L"kernel32.dll", L"tlhelp32.dll" };
     HINSTANCE hToolhelp = NULL;
     tCT32S pCT32S = NULL;
     tM32F pM32F = NULL;
@@ -538,7 +538,7 @@ private:
     const SIZE_T TTBUFLEN = 8096;
     int cnt = 0;
 
-    hPsapi = LoadLibrary( _T("psapi.dll") );
+    hPsapi = LoadLibrary( L"psapi.dll" );
     if (hPsapi == NULL)
       return FALSE;
 
@@ -561,13 +561,13 @@ private:
 
     if ( ! pEPM( hProcess, hMods, TTBUFLEN, &cbNeeded ) )
     {
-      //_ftprintf(fLogFile, _T("%lu: EPM failed, GetLastError = %lu\n"), g_dwShowCount, gle );
+      //_ftprintf(fLogFile, L"%lu: EPM failed, GetLastError = %lu\n", g_dwShowCount, gle );
       goto cleanup;
     }
 
     if ( cbNeeded > TTBUFLEN )
     {
-      //_ftprintf(fLogFile, _T("%lu: More than %lu module handles. Huh?\n"), g_dwShowCount, lenof( hMods ) );
+      //_ftprintf(fLogFile, L"%lu: More than %lu module handles. Huh?\n", g_dwShowCount, lenof( hMods ) );
       goto cleanup;
     }
 
@@ -626,7 +626,7 @@ private:
             if (GetFileVersionInfoA(szImg, dwHandle, dwSize, vData) != 0)
             {
               UINT len;
-              wchar_t szSubBlock[] = _T("\\");
+              wchar_t szSubBlock[] = L"\\";
               if (VerQueryValue(vData, szSubBlock, (LPVOID*) &fInfo, &len) == 0)
                 fInfo = NULL;
               else

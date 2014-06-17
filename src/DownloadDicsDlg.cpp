@@ -110,9 +110,9 @@ DWORD DownloadDicsDlg::AskReplacementMessage (wchar_t *DicName)
   wchar_t ReplaceMessage[DEFAULT_BUF_SIZE];
   wchar_t *TBuf = 0;
   SetStringWithAliasApplied (TBuf, DicName);
-  _stprintf_s (ReplaceMessage, _T ("Looks like %s dictionary is already present. Do you want to replace it?"), TBuf);
+  swprintf_s (ReplaceMessage, L"Looks like %s dictionary is already present. Do you want to replace it?", TBuf);
   CLEAN_AND_ZERO_ARR (TBuf);
-  MessageBoxInfo MsgBox (_hParent, ReplaceMessage, _T ("Dictionary already exists"), MB_YESNO);
+  MessageBoxInfo MsgBox (_hParent, ReplaceMessage, L"Dictionary already exists", MB_YESNO);
   return SendMessage (_hParent, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX), (WPARAM) &MsgBox, 0);
 }
 
@@ -140,23 +140,23 @@ void DownloadDicsDlg::DownloadSelected ()
   GetTempPath (MAX_PATH, TempPath);
   if (!CheckForDirectoryExistence (TempPath, FALSE, _hParent)) // If path isn't exist we're gonna try to create it else it's finish
   {
-    MessageBoxInfo MsgBox (_hParent, _T ("Path defined as temporary dir doesn't exist and couldn't be created, probably one of subdirectories have limited access, please make temporary path valid."), _T ("Temporary Path is Broken"), MB_OK | MB_ICONEXCLAMATION);
+    MessageBoxInfo MsgBox (_hParent, L"Path defined as temporary dir doesn't exist and couldn't be created, probably one of subdirectories have limited access, please make temporary path valid.", L"Temporary Path is Broken", MB_OK | MB_ICONEXCLAMATION);
     SendMessage (_hParent, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
     return;
   }
   CancelPressed = FALSE;
   int Failure = 0;
-  _tcscpy (Message, _T ("Dictionaries copied:\n"));
+  wcscpy (Message, L"Dictionaries copied:\n");
   std::map<char *, int, bool (*)(char *, char *)> FilesFound (SortCompareChars); //0x01 - .aff found, 0x02 - .dic found
   Progress *p = GetProgress ();
   p->SetProgress (0);
-  p->SetBottomMessage (_T (""));
-  p->SetTopMessage (_T (""));
+  p->SetBottomMessage (L"");
+  p->SetTopMessage (L"");
   int DownloadedCount = 0;
   int SupposedDownloadedCount = 0;
   if (!CheckForDirectoryExistence (SpellCheckerInstance->GetInstallSystem () ? SpellCheckerInstance->GetHunspellAdditionalPath () : SpellCheckerInstance->GetHunspellPath (), 0, _hParent)) // If path doesn't exist we're gonna try to create it else it's finish
   {
-    MessageBoxInfo MsgBox (_hParent, _T ("Directory for dictionaries doesn't exist and couldn't be created, probably one of subdirectories have limited access, please choose accessible directory for dictionaries"), _T ("Dictionaries Haven't Been Downloaded"), MB_OK | MB_ICONEXCLAMATION);
+    MessageBoxInfo MsgBox (_hParent, L"Directory for dictionaries doesn't exist and couldn't be created, probably one of subdirectories have limited access, please choose accessible directory for dictionaries", L"Dictionaries Haven't Been Downloaded", MB_OK | MB_ICONEXCLAMATION);
     SendMessage (_hParent, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
     return;
   }
@@ -165,14 +165,14 @@ void DownloadDicsDlg::DownloadSelected ()
     if (CheckedListBox_GetCheckState (HFileList, i) == BST_CHECKED)
     {
       SupposedDownloadedCount++;
-      FileName = new wchar_t [_tcslen (CurrentLangsFiltered->at (i).OrigName) + 4 + 1];
-      FileName[0] = _T ('\0');
-      _tcscat (FileName, CurrentLangsFiltered->at (i).OrigName);
-      _tcscat (FileName, _T (".zip"));
-      _stprintf (ProgMessage, _T ("Downloading %s..."), FileName);
+      FileName = new wchar_t [wcslen (CurrentLangsFiltered->at (i).OrigName) + 4 + 1];
+      FileName[0] = L'\0';
+      wcscat (FileName, CurrentLangsFiltered->at (i).OrigName);
+      wcscat (FileName, L".zip");
+      _swprintf (ProgMessage, L"Downloading %s...", FileName);
       p->SetTopMessage (ProgMessage);
-      _tcscpy (LocalPath, TempPath);
-      _tcscat (LocalPath, FileName);
+      wcscpy (LocalPath, TempPath);
+      wcscat (LocalPath, FileName);
       ComboBox_GetText (HAddress, Buf, DEFAULT_BUF_SIZE);
       DoFtpOperation (DOWNLOAD_FILE, Buf, FileName, LocalPath);
       if (CancelPressed)
@@ -203,20 +203,20 @@ void DownloadDicsDlg::DownloadSelected ()
           (*it).second |= (IsAffFile ? 0x01 : 0x02);
           unzOpenCurrentFile (fp);
           int BytesCopied = 0;
-          _tcscpy (DicFileLocalPath, TempPath);
+          wcscpy (DicFileLocalPath, TempPath);
           SetString (DicFileName, DicFileNameANSI);
-          _tcscat (DicFileLocalPath, DicFileName);
+          wcscat (DicFileLocalPath, DicFileName);
           if (IsAffFile)
-            _tcscat (DicFileLocalPath, _T (".aff"));
+            wcscat (DicFileLocalPath, L".aff");
           else
-            _tcscat (DicFileLocalPath, _T (".dic"));
+            wcscat (DicFileLocalPath, L".dic");
 
           SetFileAttributes (DicFileLocalPath, FILE_ATTRIBUTE_NORMAL);
-          int LocalDicFileHandle = _topen (DicFileLocalPath, _O_CREAT | _O_BINARY | _O_WRONLY);
+          int LocalDicFileHandle = _wopen (DicFileLocalPath, _O_CREAT | _O_BINARY | _O_WRONLY);
           if (LocalDicFileHandle == -1)
             continue;
 
-          _stprintf (ProgMessage, _T ("Extracting %s..."), DicFileName);
+          _swprintf (ProgMessage, L"Extracting %s...", DicFileName);
           p->SetTopMessage (ProgMessage);
           DWORD BytesTotal = 0;
           while ((BytesCopied = unzReadCurrentFile (fp, FileCopyBuf, (BUF_SIZE_FOR_COPY))) != 0)
@@ -225,7 +225,7 @@ void DownloadDicsDlg::DownloadSelected ()
             BytesTotal += BytesCopied;
             FInfo.uncompressed_size, BytesTotal * 100 / FInfo.uncompressed_size;
             p->SetProgress (BytesTotal * 100 / FInfo.uncompressed_size);
-            _stprintf (ProgMessage, _T ("%d / %d bytes extracted (%d %%)"), BytesTotal, FInfo.uncompressed_size, BytesTotal * 100 / FInfo.uncompressed_size);
+            _swprintf (ProgMessage, L"%d / %d bytes extracted (%d %%)", BytesTotal, FInfo.uncompressed_size, BytesTotal * 100 / FInfo.uncompressed_size);
             p->SetBottomMessage (ProgMessage);
           }
           unzCloseCurrentFile (fp);
@@ -240,16 +240,16 @@ void DownloadDicsDlg::DownloadSelected ()
       {
         if ((*it).second != 3) // Some of .aff/.dic is missing
         {
-          _tcscpy (DicFileLocalPath, TempPath);
+          wcscpy (DicFileLocalPath, TempPath);
           SetString (DicFileName, (*it).first);
-          _tcscat (DicFileLocalPath, DicFileName);
+          wcscat (DicFileLocalPath, DicFileName);
           switch ((*it).second)
           {
           case 1:
-            _tcscat (DicFileLocalPath, _T (".aff"));
+            wcscat (DicFileLocalPath, L".aff");
             break;
           case 2:
-            _tcscat (DicFileLocalPath, _T (".dic"));
+            wcscat (DicFileLocalPath, L".dic");
             break;
           }
           SetFileAttributes (DicFileLocalPath, FILE_ATTRIBUTE_NORMAL);
@@ -257,14 +257,14 @@ void DownloadDicsDlg::DownloadSelected ()
         }
         else
         {
-          _tcscpy (DicFileLocalPath, TempPath);
+          wcscpy (DicFileLocalPath, TempPath);
           SetString (DicFileName, (*it).first);
-          _tcscat (DicFileLocalPath, DicFileName);
-          _tcscat (DicFileLocalPath, _T (".aff"));
-          _tcscpy (HunspellDicPath, SpellCheckerInstance->GetInstallSystem () ? SpellCheckerInstance->GetHunspellAdditionalPath () : SpellCheckerInstance->GetHunspellPath ());
-          _tcscat (HunspellDicPath, _T ("\\"));
-          _tcscat (HunspellDicPath, DicFileName);
-          _tcscat (HunspellDicPath, _T (".aff"));
+          wcscat (DicFileLocalPath, DicFileName);
+          wcscat (DicFileLocalPath, L".aff");
+          wcscpy (HunspellDicPath, SpellCheckerInstance->GetInstallSystem () ? SpellCheckerInstance->GetHunspellAdditionalPath () : SpellCheckerInstance->GetHunspellPath ());
+          wcscat (HunspellDicPath, L"\\");
+          wcscat (HunspellDicPath, DicFileName);
+          wcscat (HunspellDicPath, L".aff");
           BOOL Confirmation = TRUE;
           BOOL ReplaceQuestionWasAsked = FALSE;
           if (PathFileExists (HunspellDicPath))
@@ -290,8 +290,8 @@ void DownloadDicsDlg::DownloadSelected ()
             DeleteFile (DicFileLocalPath);
             Failure = 1;
           }
-          _tcscpy (DicFileLocalPath + _tcslen (DicFileLocalPath) - 4, _T (".dic"));
-          _tcscpy (HunspellDicPath + _tcslen (HunspellDicPath) - 4, _T (".dic"));
+          wcscpy (DicFileLocalPath + wcslen (DicFileLocalPath) - 4, L".dic");
+          wcscpy (HunspellDicPath + wcslen (HunspellDicPath) - 4, L".dic");
           if (!Confirmation)
           {
             SetFileAttributes (DicFileLocalPath, FILE_ATTRIBUTE_NORMAL);
@@ -331,8 +331,8 @@ void DownloadDicsDlg::DownloadSelected ()
 
           if (Confirmation)
           {
-            _tcscat (Message, ConvertedDicName);
-            _tcscat (Message, _T ("\n"));
+            wcscat (Message, ConvertedDicName);
+            wcscat (Message, L"\n");
             DownloadedCount++;
           }
           if (!Confirmation)
@@ -356,17 +356,17 @@ clean_and_continue:
   GetProgress ()->display (false);
   if (Failure == 1)
   {
-    MessageBoxInfo MsgBox (_hParent, _T ("Access denied to dictionaries directory, either try to run Notepad++ as administrator or select some different, accessible dictionary path"), _T ("Dictionaries Haven't Been Downloaded"), MB_OK | MB_ICONEXCLAMATION);
+    MessageBoxInfo MsgBox (_hParent, L"Access denied to dictionaries directory, either try to run Notepad++ as administrator or select some different, accessible dictionary path", L"Dictionaries Haven't Been Downloaded", MB_OK | MB_ICONEXCLAMATION);
     SendMessage (_hParent, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
   }
   else if (DownloadedCount)
   {
-    MessageBoxInfo MsgBox (_hParent, Message, _T ("Dictionaries Downloaded"), MB_OK | MB_ICONINFORMATION);
+    MessageBoxInfo MsgBox (_hParent, Message, L"Dictionaries Downloaded", MB_OK | MB_ICONINFORMATION);
     SendMessage (_hParent, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
   }
   else if (SupposedDownloadedCount) // Otherwise - silent
   {
-    MessageBoxInfo MsgBox (_hParent, _T ("Sadly, no dictionaries were copied, please try again"), _T ("Dictionaries Haven't Been Downloaded"), MB_OK | MB_ICONEXCLAMATION);
+    MessageBoxInfo MsgBox (_hParent, L"Sadly, no dictionaries were copied, please try again", L"Dictionaries Haven't Been Downloaded", MB_OK | MB_ICONEXCLAMATION);
     SendMessage (_hParent, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
   }
   for (int i = 0; i < ListBox_GetCount (HFileList); i++)
@@ -382,26 +382,26 @@ clean_and_continue:
 
 void FtpTrim (wchar_t *FtpAddress)
 {
-  StrTrim (FtpAddress, _T (" "));
-  const wchar_t FtpPrefix[] = _T ("ftp://");
-  int FtpPrefixLen = _tcslen (FtpPrefix);
-  for (unsigned int i = 0; i < _tcslen (FtpAddress); i++) // Exchanging slashes
+  StrTrim (FtpAddress, L" ");
+  const wchar_t FtpPrefix[] = L"ftp://";
+  int FtpPrefixLen = wcslen (FtpPrefix);
+  for (unsigned int i = 0; i < wcslen (FtpAddress); i++) // Exchanging slashes
   {
-    if (FtpAddress[i] == _T ('\\'))
-      FtpAddress[i] = _T ('/');
+    if (FtpAddress[i] == L'\\')
+      FtpAddress[i] = L'/';
   }
 
-  if (_tcsncmp (FtpPrefix, FtpAddress, FtpPrefixLen) == 0) // Cutting out stuff like ftp://
+  if (wcsncmp (FtpPrefix, FtpAddress, FtpPrefixLen) == 0) // Cutting out stuff like ftp://
   {
-    for (unsigned int i = 0; i <= _tcslen (FtpAddress) - FtpPrefixLen; i++)
+    for (unsigned int i = 0; i <= wcslen (FtpAddress) - FtpPrefixLen; i++)
     {
       FtpAddress[i] = FtpAddress [i + FtpPrefixLen];
     }
   }
 
-  for (unsigned int i = 0; i < _tcslen (FtpAddress); i++)
+  for (unsigned int i = 0; i < wcslen (FtpAddress); i++)
   {
-    FtpAddress[i] = _totlower (FtpAddress[i]);
+    FtpAddress[i] = towlower (FtpAddress[i]);
     if (FtpAddress[i] == '/')
       break; // In dir names upper/lower case could matter
   }
@@ -456,12 +456,12 @@ public:
     ProgressInstance->SetProgress (BytesReceived * 100 / TargetSize);
     wchar_t Message[DEFAULT_BUF_SIZE];
 
-    _stprintf (Message, _T ("%d / %d bytes downloaded (%d %%)"), BytesReceived, TargetSize, BytesReceived * 100 / TargetSize);
+    _swprintf (Message, L"%d / %d bytes downloaded (%d %%)", BytesReceived, TargetSize, BytesReceived * 100 / TargetSize);
     ProgressInstance->SetBottomMessage (Message);
 
     if (WaitForNetworkEvent (EID_CANCEL_DOWNLOAD, 0) == WAIT_OBJECT_0)
     {
-      ProgressInstance->SetBottomMessage (_T ("Aborting Download..."));
+      ProgressInstance->SetBottomMessage (L"Aborting Download...");
       DownloadDicsInstance->SetCancelPressed (TRUE);
       FtpSession->Abort ();
       return;
@@ -478,17 +478,17 @@ void DownloadDicsDlg::SetCancelPressed (BOOL Value)
 #define INITIAL_SMALL_BUFFER_SIZE 10 * 1024
 void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, wchar_t *Address, wchar_t *FileName, wchar_t *Location)
 {
-  wchar_t *ProxyFinalString = new wchar_t [_tcslen (SpellCheckerInstance->GetProxyHostName ()) + 10];
+  wchar_t *ProxyFinalString = new wchar_t [wcslen (SpellCheckerInstance->GetProxyHostName ()) + 10];
   char *FileBuffer = 0;
-  _stprintf (ProxyFinalString, _T ("%s:%d"), SpellCheckerInstance->GetProxyHostName (), SpellCheckerInstance->GetProxyPort ());
-  HINTERNET WinInetHandle = InternetOpen (_T ("DSpellCheck"), INTERNET_OPEN_TYPE_PROXY, ProxyFinalString, _T (""), 0);
+  _swprintf (ProxyFinalString, L"%s:%d", SpellCheckerInstance->GetProxyHostName (), SpellCheckerInstance->GetProxyPort ());
+  HINTERNET WinInetHandle = InternetOpen (L"DSpellCheck", INTERNET_OPEN_TYPE_PROXY, ProxyFinalString, L"", 0);
   CLEAN_AND_ZERO_ARR (ProxyFinalString);
   if (!WinInetHandle)
   {
     if (Type == FILL_FILE_LIST)
     {
       StatusColor = COLOR_FAIL;
-      Static_SetText (HStatus, _T ("Status: Connection cannot be established"));
+      Static_SetText (HStatus, L"Status: Connection cannot be established");
     }
     goto cleanup;
   }
@@ -496,11 +496,11 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, w
   int Error = 0;
 
   FtpTrim (Address);
-  wchar_t *Url = new wchar_t [_tcslen (Address) + (Type == DOWNLOAD_FILE ? _tcslen (FileName) : 0) + 6 + 1];
-  _tcscpy (Url, _T ("ftp://"));
-  _tcscat (Url, Address);
+  wchar_t *Url = new wchar_t [wcslen (Address) + (Type == DOWNLOAD_FILE ? wcslen (FileName) : 0) + 6 + 1];
+  wcscpy (Url, L"ftp://");
+  wcscat (Url, Address);
   if (Type == DOWNLOAD_FILE)
-    _tcscat (Url, FileName);
+    wcscat (Url, FileName);
 
   DWORD TimeOut = 15000;
   InternetSetOption (WinInetHandle, INTERNET_OPTION_CONNECT_TIMEOUT, &TimeOut, sizeof (DWORD));
@@ -516,7 +516,7 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, w
       StatusColor = COLOR_FAIL;
       wchar_t Buf[256];
 
-      _stprintf (Buf, _T ("Status: URL cannot be opened (Error code: %d)"), GetLastError ());
+      _swprintf (Buf, L"Status: URL cannot be opened (Error code: %d)", GetLastError ());
       Static_SetText (HStatus, Buf);
       goto cleanup;
     }
@@ -525,9 +525,9 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, w
   if (!SpellCheckerInstance->GetProxyAnonymous ())
   {
     InternetSetOption (OpenedURL, INTERNET_OPTION_PROXY_USERNAME,
-      (LPVOID) SpellCheckerInstance->GetProxyUserName (), _tcslen (SpellCheckerInstance->GetProxyUserName ()) + 1);
+      (LPVOID) SpellCheckerInstance->GetProxyUserName (), wcslen (SpellCheckerInstance->GetProxyUserName ()) + 1);
     InternetSetOption (OpenedURL, INTERNET_OPTION_PROXY_PASSWORD,
-      (LPVOID) SpellCheckerInstance->GetProxyPassword (), _tcslen (SpellCheckerInstance->GetProxyPassword ()) + 1);
+      (LPVOID) SpellCheckerInstance->GetProxyPassword (), wcslen (SpellCheckerInstance->GetProxyPassword ()) + 1);
     InternetSetOption (OpenedURL, INTERNET_OPTION_PROXY_SETTINGS_CHANGED,
       0, 0);
     HttpSendRequest (OpenedURL, 0, 0, 0, 0);
@@ -549,7 +549,7 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, w
     {
       StatusColor = COLOR_FAIL;
       wchar_t Buf[256];
-      _stprintf (Buf, _T ("Status: Query status code failed (Error: %d)"), GetLastError ());
+      _swprintf (Buf, L"Status: Query status code failed (Error: %d)", GetLastError ());
       Static_SetText (HStatus, Buf);
     }
     goto cleanup;
@@ -560,12 +560,12 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, w
     {
       StatusColor = COLOR_FAIL;
       if (Code == HTTP_STATUS_PROXY_AUTH_REQ )
-        Static_SetText (HStatus, _T ("Status: Proxy Authorization Required"));
+        Static_SetText (HStatus, L"Status: Proxy Authorization Required");
       else
       {
         wchar_t Buf[256];
 
-        _stprintf (Buf, _T ("Status: Bad status code (%d)"), Code);
+        _swprintf (Buf, L"Status: Bad status code (%d)", Code);
         Static_SetText (HStatus, Buf);
       }
     }
@@ -610,7 +610,7 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, w
     if (CurPos == 0)
     {
       StatusColor = COLOR_FAIL;
-      Static_SetText (HStatus, _T ("Status: Proxy HTTP Output cannot be parsed"));
+      Static_SetText (HStatus, L"Status: Proxy HTTP Output cannot be parsed");
       goto cleanup;
     }
     while ((size_t) (CurPos - FileBuffer) < BytesReadTotal)
@@ -629,7 +629,7 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, w
       if (TempCurPos == 0)
       {
         StatusColor = COLOR_FAIL;
-        Static_SetText (HStatus, _T ("Status: Proxy HTTP Output cannot be parsed"));
+        Static_SetText (HStatus, L"Status: Proxy HTTP Output cannot be parsed");
         goto cleanup;
       }
       TempCurPos++;
@@ -664,7 +664,7 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, w
     if (count == 0)
     {
       StatusColor = COLOR_WARN;
-      Static_SetText (HStatus, _T ("Status: Directory doesn't contain any zipped files"));
+      Static_SetText (HStatus, L"Status: Directory doesn't contain any zipped files");
       goto cleanup;
     }
 
@@ -680,7 +680,7 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, w
       PostMessageToMainThread (TM_ADD_USER_SERVER, (WPARAM) NewServer, 0);
     }
     StatusColor = COLOR_OK;
-    Static_SetText (HStatus, _T ("Status: List of available files was successfully loaded"));
+    Static_SetText (HStatus, L"Status: List of available files was successfully loaded");
     EnableWindow (HInstallSelected, TRUE);
   }
   else if (Type == DOWNLOAD_FILE)
@@ -691,7 +691,7 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, w
     DWORD BytesRead;
     DWORD BytesReadTotal = 0;
     DWORD FinalSize = 0;
-    FileName[_tcslen (FileName) - 4] = _T ('\0');
+    FileName[wcslen (FileName) - 4] = L'\0';
     wchar_t Message[DEFAULT_BUF_SIZE];
 
     if (PathFileExists (Location))
@@ -704,7 +704,7 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, w
       SetFileAttributes (Location, FILE_ATTRIBUTE_NORMAL);
       DeleteFile (Location);
     }
-    int FileHandle = _topen (Location, _O_CREAT | _O_BINARY | _O_WRONLY);
+    int FileHandle = _wopen (Location, _O_CREAT | _O_BINARY | _O_WRONLY);
     if (!FileHandle)
       goto cleanup;
 
@@ -728,13 +728,13 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, w
       write (FileHandle, FileBuffer, BytesRead);
       BytesReadTotal += BytesRead;
 
-      _stprintf (Message, _T ("%d / ???   bytes downloaded"), BytesReadTotal);
+      _swprintf (Message, L"%d / ???   bytes downloaded", BytesReadTotal);
 
       GetProgress ()->SetBottomMessage (Message);
 
       if (WaitForNetworkEvent (EID_CANCEL_DOWNLOAD, 0) == WAIT_OBJECT_0)
       {
-        GetProgress ()->SetBottomMessage (_T ("Aborting Download..."));
+        GetProgress ()->SetBottomMessage (L"Aborting Download...");
         SetCancelPressed (TRUE);
         break;
       }
@@ -756,7 +756,7 @@ void DownloadDicsDlg::DoFtpOperation (FTP_OPERATION_TYPE Type, wchar_t *Address,
   {
     EnableWindow (HInstallSelected, FALSE);
     StatusColor = COLOR_NEUTRAL;
-    Static_SetText (HStatus, _T ("Status: Loading..."));
+    Static_SetText (HStatus, L"Status: Loading...");
     ListBox_ResetContent (HFileList);
     CLEAN_AND_ZERO (CurrentLangs);
     CurrentLangs = new std::vector<LanguageName> ();
@@ -769,25 +769,25 @@ void DownloadDicsDlg::DoFtpOperation (FTP_OPERATION_TYPE Type, wchar_t *Address,
   }
 
   FtpTrim (Address);
-  wchar_t *Url = new wchar_t[_tcslen (Address) + 6 + 1];
-  _tcscpy (Url, _T ("ftp://"));
-  _tcsncat (Url, Address, _tcslen (Address) - 1);
-  Folders = _tcschr (Address, _T ('/'));
+  wchar_t *Url = new wchar_t[wcslen (Address) + 6 + 1];
+  wcscpy (Url, L"ftp://");
+  wcsncat (Url, Address, wcslen (Address) - 1);
+  Folders = wcschr (Address, L'/');
   if (Folders != 0)
   {
-    *Folders = _T ('\0');
+    *Folders = L'\0';
     Folders++;
   }
 
   nsFTP::CLogonInfo *logonInfo = 0;
   nsFTP::CFTPClient ftpClient (nsSocket::CreateDefaultBlockingSocketInstance (), 3);
   if (!SpellCheckerInstance->GetUseProxy ())
-    logonInfo = new nsFTP::CLogonInfo (Address, 21, _T ("anonymous"), _T (""), _T (""));
+    logonInfo = new nsFTP::CLogonInfo (Address, 21, L"anonymous", L"", L"");
   else
     logonInfo = new nsFTP::CLogonInfo (
-    Address, 21, _T ("anonymous"), _T (""), _T (""),
+    Address, 21, L"anonymous", L"", L"",
     SpellCheckerInstance->GetProxyHostName (),
-    _T (""), _T (""),
+    L"", L"",
     SpellCheckerInstance->GetProxyPort (),
     nsFTP::CFirewallType::UserWithNoLogon ()
     );
@@ -797,7 +797,7 @@ void DownloadDicsDlg::DoFtpOperation (FTP_OPERATION_TYPE Type, wchar_t *Address,
     if (Type == FILL_FILE_LIST)
     {
       StatusColor = COLOR_FAIL;
-      Static_SetText (HStatus, _T ("Status: Connection Error"));
+      Static_SetText (HStatus, L"Status: Connection Error");
     }
     goto cleanup;
   }
@@ -809,7 +809,7 @@ void DownloadDicsDlg::DoFtpOperation (FTP_OPERATION_TYPE Type, wchar_t *Address,
     if (!ftpClient.List (Folders, List, true))
     {
       StatusColor = COLOR_FAIL;
-      Static_SetText (HStatus, _T ("Status: Can't list directory files"));
+      Static_SetText (HStatus, L"Status: Can't list directory files");
       goto cleanup;
     }
 
@@ -818,12 +818,12 @@ void DownloadDicsDlg::DoFtpOperation (FTP_OPERATION_TYPE Type, wchar_t *Address,
 
     for (unsigned int i = 0; i < List.size (); i++)
     {
-      if (!PathMatchSpec (List.at (i)->Name ().c_str (), _T ("*.zip")))
+      if (!PathMatchSpec (List.at (i)->Name ().c_str (), L"*.zip"))
         continue;
 
       count++;
       SetString (Buf, List.at (i)->Name ().c_str ());
-      Buf[_tcslen (Buf) - 4] = 0;
+      Buf[wcslen (Buf) - 4] = 0;
       LanguageName Lang (Buf); // Probably should add options for using/not using aliases
       CurrentLangs->push_back (Lang);
     }
@@ -831,7 +831,7 @@ void DownloadDicsDlg::DoFtpOperation (FTP_OPERATION_TYPE Type, wchar_t *Address,
     if (count == 0)
     {
       StatusColor = COLOR_WARN;
-      Static_SetText (HStatus, _T ("Status: Directory doesn't contain any zipped files"));
+      Static_SetText (HStatus, L"Status: Directory doesn't contain any zipped files");
       goto cleanup;
     }
 
@@ -848,7 +848,7 @@ void DownloadDicsDlg::DoFtpOperation (FTP_OPERATION_TYPE Type, wchar_t *Address,
       PostMessageToMainThread (TM_ADD_USER_SERVER, (WPARAM) NewServer, 0);
     }
     StatusColor = COLOR_OK;
-    Static_SetText (HStatus, _T ("Status: List of available files was successfully loaded"));
+    Static_SetText (HStatus, L"Status: List of available files was successfully loaded");
     EnableWindow (HInstallSelected, TRUE);
   }
   else if (Type == DOWNLOAD_FILE)
@@ -946,9 +946,9 @@ BOOL CALLBACK DownloadDicsDlg::run_dlgProc (UINT message, WPARAM wParam, LPARAM 
       HInstallSystem = ::GetDlgItem (_hSelf, IDC_INSTALL_SYSTEM);
       RefreshIcon = (HICON) LoadImage (_hInst, MAKEINTRESOURCE (IDI_REFRESH), IMAGE_ICON, 16, 16, 0);
       SendMessage (HRefresh, BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) RefreshIcon);
-      //ComboBox_SetText(HAddress, _T ("ftp://127.0.0.1"));
+      //ComboBox_SetText(HAddress, L"ftp://127.0.0.1");
       SendEvent (EID_INIT_DOWNLOAD_COMBOBOX);
-      //ComboBox_SetText(HAddress, _T ("ftp://gd.tuwien.ac.at/office/openoffice/contrib/dictionaries"));
+      //ComboBox_SetText(HAddress, L"ftp://gd.tuwien.ac.at/office/openoffice/contrib/dictionaries");
       SendEvent (EID_FILL_DOWNLOAD_DICS_DIALOG);
       DefaultBrush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
       return TRUE;

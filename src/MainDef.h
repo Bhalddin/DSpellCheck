@@ -48,8 +48,8 @@ enum e
 
 const wchar_t *const CustomGUIMesssagesNames[] =
 {
-  _T ("DSpellCheck_MessageBox"),
-  _T ("DSpellCheck_ShowCalculatedMenu"),
+  L"DSpellCheck_MessageBox",
+  L"DSpellCheck_ShowCalculatedMenu",
 };
 
 namespace DelimiterModes
@@ -196,11 +196,7 @@ public:
 typedef stdext::hash_set <char *, hash_compare_strings> WordSet;
 typedef std::set <char *, bool ( *)(char *, char *)> SortedWordSet;
 
-#ifdef UNICODE
-#define DEFAULT_DELIMITERS _T (",.!?\":;{}()[]\\/=+-^$*<>|#$@%&~\u2026\u2116\u2014\u00AB\u00BB\u2013\u2022\u00A9\u203A\u201C\u201D\u00B7\u00A0\u0060\u2192\u00d7")
-#else // All non-ASCII symbols removed
-#define DEFAULT_DELIMITERS _T (",.!?\":;{}()[]\\/=+-^$*<>|#$@%&~")
-#endif
+#define DEFAULT_DELIMITERS L",.!?\":;{}([]\\/=+-^$*<>|#$@%&~\u2026\u2116\u2014\u00AB\u00BB\u2013\u2022\u00A9\u203A\u201C\u201D\u00B7\u00A0\u0060\u2192\u00d7"
 
 #define DEFAULT_DELIMITER_EXCEPTION "_'"
 

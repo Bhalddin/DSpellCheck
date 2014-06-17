@@ -56,16 +56,16 @@ void LangList::ApplyChoice (SpellChecker *SpellCheckerInstance)
   wchar_t *ItemBuf = 0;
   char *ConvertedBuf = 0;
   BOOL FirstOne = TRUE;
-  Buf[0] = _T ('\0');
+  Buf[0] = L'\0';
   for (int i = 0; i < count; i++)
   {
     if (CheckedListBox_GetCheckState (HLangList, i))
     {
       SetString (ItemBuf, SpellCheckerInstance->GetLangByIndex (i));
       if (!FirstOne)
-        _tcscat (Buf, _T ("|"));
+        wcscat (Buf, L"|");
 
-      _tcscat_s (Buf, ItemBuf);
+      wcscat_s (Buf, ItemBuf);
       FirstOne = FALSE;
     }
   }

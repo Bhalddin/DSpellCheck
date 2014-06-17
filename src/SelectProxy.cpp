@@ -69,7 +69,7 @@ void SelectProxy::ApplyChoice (SpellChecker *SpellCheckerInstance)
   TBuf = new wchar_t[DEFAULT_BUF_SIZE];
   Edit_GetText (HPort, TBuf, DEFAULT_BUF_SIZE);
   wchar_t *EndPtr;
-  int x = _tcstol (TBuf, &EndPtr, 10);
+  int x = wcstol (TBuf, &EndPtr, 10);
   SpellCheckerInstance->SetProxyPort (x);
   CLEAN_AND_ZERO_ARR (TBuf);
   GetDownloadDics ()->Refresh ();
@@ -111,7 +111,7 @@ void SelectProxy::SetOptions (BOOL UseProxy, wchar_t *HostName, wchar_t *UserNam
   if (Port > 65535)
     Port = 65535;
   wchar_t Buf[DEFAULT_BUF_SIZE];
-  _itot (Port, Buf, 10);
+  _itow (Port, Buf, 10);
   Edit_SetText (HPort, Buf);
   DisableControls ();
   ComboBox_SetCurSel (HProxyType, ProxyType);
@@ -130,8 +130,8 @@ BOOL CALLBACK SelectProxy::run_dlgProc (UINT message, WPARAM wParam, LPARAM lPar
       HUseProxy = ::GetDlgItem (_hSelf, IDC_USEPROXY);
       HProxyAnonymous = ::GetDlgItem (_hSelf, IDC_ANONYMOUS_LOGIN);
       HProxyType = ::GetDlgItem (_hSelf, IDC_PROXY_TYPE);
-      ComboBox_AddString (HProxyType, _T ("FTP Web Proxy"));
-      ComboBox_AddString (HProxyType, _T ("FTP Gateway"));
+      ComboBox_AddString (HProxyType, L"FTP Web Proxy");
+      ComboBox_AddString (HProxyType, L"FTP Gateway");
       SendEvent (EID_UPDATE_SELECT_PROXY);
       return TRUE;
     }
@@ -175,13 +175,13 @@ BOOL CALLBACK SelectProxy::run_dlgProc (UINT message, WPARAM wParam, LPARAM lPar
           if (!*Buf)
             return FALSE;
 
-          x = _tcstol (Buf, &EndPtr, 10);
+          x = wcstol (Buf, &EndPtr, 10);
           if (*EndPtr)
-            Edit_SetText (HPort, _T ("0"));
+            Edit_SetText (HPort, L"0");
           else if (x > 65535)
-            Edit_SetText (HPort, _T ("65535"));
+            Edit_SetText (HPort, L"65535");
           else if (x < 0)
-            Edit_SetText (HPort, _T ("0"));
+            Edit_SetText (HPort, L"0");
 
           return FALSE;
         }

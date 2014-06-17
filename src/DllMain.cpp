@@ -54,7 +54,7 @@ void SetRecheckDelay (int Value, int WriteToIni)
   {
     std::pair <wchar_t *, DWORD> *x = new std::pair <wchar_t *, DWORD>;
     x->first = 0;
-    SetString (x->first, _T ("Recheck_Delay"));
+    SetString (x->first, L"Recheck_Delay");
     x->second = MAKELPARAM (Value, 500);
     PostMessageToMainThread (TM_WRITE_SETTING, 0, (LPARAM) x);
   }
@@ -173,8 +173,8 @@ LRESULT CALLBACK SubWndProcNotepad(HWND hWnd, UINT Message, WPARAM wParam, LPARA
 
   /*
   wchar_t Buf[DEFAULT_BUF_SIZE];
-  _itot (Message, Buf, 16);
-  _tcscat (Buf, _T ("\n"));
+  _itow (Message, Buf, 16);
+  wcscat (Buf, L"\n");
   OutputDebugString (Buf);
   */
   ret = ::CallWindowProc(wndProcNotepad, hWnd, Message, wParam, lParam);
@@ -394,9 +394,7 @@ extern "C" __declspec(dllexport) LRESULT messageProc(UINT Message, WPARAM wParam
   return FALSE;
 }
 
-#ifdef UNICODE
 extern "C" __declspec(dllexport) BOOL isUnicode()
 {
   return TRUE;
 }
-#endif //UNICODE

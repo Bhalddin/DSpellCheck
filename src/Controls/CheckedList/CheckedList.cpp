@@ -31,7 +31,7 @@
 #include <commctrl.h>
 #include "CheckedList.h"
 
-#define WPROC _T("Wprc") ///<Generic property tag
+#define WPROC L"Wprc" ///<Generic property tag
 #define ID_LISTBOX 2000  ///<An Id for the ListBox
 #define FLATCHECKS 0x01  ///<Draw flat checks flag
 #define CHECKALL 0x02    ///<Enable RMB check/uncheck all
@@ -59,7 +59,7 @@
 
 /// @}
 
-LPCTSTR g_szClassName = _T("CheckedListBox");   ///< The classname.
+LPCTSTR g_szClassName = L"CheckedListBox";   ///< The classname.
 
 /****************************************************************************/
 //Functions
@@ -250,7 +250,7 @@ VOID Control_OnDrawItem(HWND hwnd, const DRAWITEMSTRUCT * lpDrawItem)
     // Erase and draw
     ExtTextOut(dc, 0, 0, ETO_OPAQUE, &rcText, 0, 0, 0);
 
-    DrawText(dc, buf, _tcslen(buf), &rcText, DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
+    DrawText(dc, buf, wcslen(buf), &rcText, DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
 
     if ((lpDrawItem->itemState & (ODS_FOCUS | ODS_SELECTED)) == (ODS_FOCUS | ODS_SELECTED))
       DrawFocusRect(dc, &rcText);

@@ -93,7 +93,7 @@ void AspellInterface::SendAspellErorr (AspellCanHaveError *Error)
 {
   wchar_t *ErrorMsg = 0;
   SetString (ErrorMsg, aspell_error_message (Error));
-  MessageBoxInfo MsgBox (NppWindow, ErrorMsg, _T ("Aspell Error"), MB_OK | MB_ICONEXCLAMATION);
+  MessageBoxInfo MsgBox (NppWindow, ErrorMsg, L"Aspell Error", MB_OK | MB_ICONEXCLAMATION);
   SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
   CLEAN_AND_ZERO_ARR (ErrorMsg);
 }
@@ -226,7 +226,7 @@ void AspellInterface::AddToDictionary (char *Word, int DictionaryNum)
     {
       wchar_t *ErrorMsg = 0;
       SetString (ErrorMsg, aspell_speller_error_message (SingularSpeller));
-      MessageBoxInfo MsgBox (NppWindow, ErrorMsg, _T ("Aspell Error"), MB_OK | MB_ICONEXCLAMATION);
+      MessageBoxInfo MsgBox (NppWindow, ErrorMsg, L"Aspell Error", MB_OK | MB_ICONEXCLAMATION);
       SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
       CLEAN_AND_ZERO_ARR (ErrorMsg);
     }
@@ -239,7 +239,7 @@ void AspellInterface::AddToDictionary (char *Word, int DictionaryNum)
     {
       wchar_t *ErrorMsg = 0;
       SetString (ErrorMsg, aspell_speller_error_message (Spellers->at (DictionaryNum)));
-      MessageBoxInfo MsgBox (NppWindow, ErrorMsg, _T ("Aspell Error"), MB_OK | MB_ICONEXCLAMATION);
+      MessageBoxInfo MsgBox (NppWindow, ErrorMsg, L"Aspell Error", MB_OK | MB_ICONEXCLAMATION);
       SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
     }
   }
@@ -337,7 +337,7 @@ void AspellInterface::SetLanguage (wchar_t *Lang)
   {
     delete_aspell_config (spell_config);
     std::vector<wchar_t *> *LangList = GetLanguageList ();
-    if (LangList && (!Lang || _tcscmp (Lang, LangList->at (0)) != 0))
+    if (LangList && (!Lang || wcscmp (Lang, LangList->at (0)) != 0))
     {
       SetLanguage (LangList->at (0));
       CLEAN_AND_ZERO_STRING_VECTOR (LangList);

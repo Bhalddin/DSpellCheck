@@ -39,20 +39,20 @@ void SetString (wchar_t *&Target, const wchar_t *Str)
     return;
   CLEAN_AND_ZERO_ARR (Target);
   Target = new wchar_t[wcslen (Str) + 1];
-  _tcscpy (Target, Str);
+  wcscpy (Target, Str);
 }
 
 void SetString (char *&Target, const wchar_t *Str)
 {
   CLEAN_AND_ZERO_ARR (Target);
-  size_t OutSize = _tcslen (Str) + 1;
+  size_t OutSize = wcslen (Str) + 1;
   size_t PrevOutSize = 0;
   Target = new char[OutSize];
   char *OutBuf = Target;
   size_t res = (size_t) -1;
 
   iconv_t Converter = iconv_open ("CHAR//IGNORE", "UCS-2LE");
-  size_t InSize = (_tcslen (Str) + 1) * sizeof (wchar_t);
+  size_t InSize = (wcslen (Str) + 1) * sizeof (wchar_t);
 
   while (*Str)
   {
@@ -119,8 +119,8 @@ void SetStringDUtf8 (char *&Target, const wchar_t *Str)
 {
   iconv_t Converter = iconv_open ("UTF-8//IGNORE", "UCS-2LE");
   CLEAN_AND_ZERO_ARR (Target);
-  size_t InSize = (_tcslen (Str) + 1) * sizeof (wchar_t);
-  size_t OutSize = 6 * _tcslen (Str) + 1; // Maximum Possible UTF-8 size
+  size_t InSize = (wcslen (Str) + 1) * sizeof (wchar_t);
+  size_t OutSize = 6 * wcslen (Str) + 1; // Maximum Possible UTF-8 size
   char *TempBuf = new char[OutSize];
   char *OutBuf = (char *) TempBuf;
   size_t res = iconv (Converter, (const char **) &Str, &InSize, &OutBuf, &OutSize);
@@ -285,9 +285,6 @@ BOOL MatchSpecialChar (wchar_t *Dest, wchar_t *&Source)
     /* Hexadecimal form of wide characters.  */
     len = (c == 'x' ? 2 : (c == 'u' ? 4 : 8));
     n = 0;
-#ifndef UNICODE
-    len = 2;
-#endif
     for (i = 0; i < len; i++)
     {
       char buf[2] = { '\0', '\0' };
@@ -314,7 +311,7 @@ BOOL MatchSpecialChar (wchar_t *Dest, wchar_t *&Source)
 
 void SetParsedString (wchar_t *&Dest, wchar_t *Source)
 {
-  Dest = new wchar_t [_tcslen (Source) + 1];
+  Dest = new wchar_t [wcslen (Source) + 1];
   wchar_t *LastPos = 0;
   wchar_t *ResString = Dest;
   while (*Source)
@@ -542,7 +539,7 @@ size_t Utf8Length (const char *String)
 
 bool SortCompare(wchar_t *a, wchar_t *b)
 {
-  return _tcscmp (a, b) < 0;
+  return wcscmp (a, b) < 0;
 }
 
 bool EquivCharStrings (char *a, char *b)
@@ -562,13 +559,13 @@ size_t HashCharString (char *a)
 
 bool Equivwchar_tStrings (wchar_t *a, wchar_t *b)
 {
-  return (_tcscmp (a, b) == 0);
+  return (wcscmp (a, b) == 0);
 }
 
 size_t Hashwchar_tString (wchar_t *a)
 {
   size_t Hash = 7;
-  for(unsigned int i = 0; i < _tcslen (a); i++)
+  for(unsigned int i = 0; i < wcslen (a); i++)
   {
     Hash = Hash * 31 + a[i];
   }
@@ -585,27 +582,27 @@ bool SortCompareWChars (wchar_t *a, wchar_t *b)
   return wcscmp (a, b) < 0;
 }
 
-const wchar_t *const AliasesFrom[] = {_T ("af_Za"), _T ("ak_GH"), _T ("bg_BG"), _T ("ca_ANY"), _T ("ca_ES"), _T ("cop_EG"), _T ("cs_CZ"), _T ("cy_GB"), _T ("da_DK"), _T ("de_AT"), _T ("de_CH"), _T ("de_DE"),
-  _T ("de_DE_comb"), _T ("de_DE_frami"), _T ("de_DE_neu"), _T ("el_GR"), _T ("en_AU"), _T ("en_CA"), _T ("en_GB"), _T ("en_GB-oed"), _T ("en_NZ"), _T ("en_US"), _T ("en_ZA"), _T ("eo_EO"), _T ("es_AR"),
-  _T ("es_BO"), _T ("es_CL"), _T ("es_CO"), _T ("es_CR"), _T ("es_CU"), _T ("es_DO"), _T ("es_EC"), _T ("es_ES"), _T ("es_GT"), _T ("es_HN"), _T ("es_MX"), _T ("es_NEW"), _T ("es_NI"), _T ("es_PA"), _T ("es_PE"),
-  _T ("es_PR"), _T ("es_PY"), _T ("es_SV"), _T ("es_UY"), _T ("es_VE"), _T ("et_EE"),  _T ("fo_FO"), _T ("fr_FR"), _T ("fr_FR-1990"), _T ("fr_FR-1990_1-3-2"), _T ("fr_FR-classique"), _T ("fr_FR-classique_1-3-2"), _T ("fr_FR_1-3-2"), _T ("fy_NL"),
-  _T ("ga_IE"), _T ("gd_GB"), _T ("gl_ES"), _T ("gu_IN"), _T ("he_IL"), _T ("hi_IN"), _T ("hil_PH"), _T ("hr_HR"), _T ("hu_HU"), _T ("ia"), _T ("id_ID"), _T ("is_IS"), _T ("it_IT"), _T ("ku_TR"),
-  _T ("la"), _T ("lt_LT"), _T ("lv_LV"), _T ("mg_MG"), _T ("mi_NZ"), _T ("mk_MK"), _T ("mos_BF"), _T ("mr_IN"), _T ("ms_MY"), _T ("nb_NO"), _T ("ne_NP"), _T ("nl_NL"), _T ("nn_NO"), _T ("nr_ZA"),
-  _T ("ns_ZA"), _T ("ny_MW"), _T ("oc_FR"), _T ("pl_PL"), _T ("pt_BR"), _T ("pt_PT"), _T ("ro_RO"), _T ("ru_RU"), _T ("ru_RU_ie"), _T ("ru_RU_ye"), _T ("ru_RU_yo"), _T ("rw_RW"), _T ("si_SI"), _T ("sk_SK"), _T ("sq_AL"),
-  _T ("ss_ZA"), _T ("st_ZA"), _T ("sv_SE"), _T ("sw_KE"),  _T ("tet_ID"), _T ("th_TH"), _T ("tl_PH"), _T ("tn_ZA"), _T ("ts_ZA"), _T ("uk_UA"), _T ("ur_PK"), _T ("ve_ZA"), _T ("vi-VN"), _T ("xh_ZA"), _T ("zu_ZA")
+const wchar_t *const AliasesFrom[] = {L"af_Za", L"ak_GH", L"bg_BG", L"ca_ANY", L"ca_ES", L"cop_EG", L"cs_CZ", L"cy_GB", L"da_DK", L"de_AT", L"de_CH", L"de_DE",
+  L"de_DE_comb", L"de_DE_frami", L"de_DE_neu", L"el_GR", L"en_AU", L"en_CA", L"en_GB", L"en_GB-oed", L"en_NZ", L"en_US", L"en_ZA", L"eo_EO", L"es_AR",
+  L"es_BO", L"es_CL", L"es_CO", L"es_CR", L"es_CU", L"es_DO", L"es_EC", L"es_ES", L"es_GT", L"es_HN", L"es_MX", L"es_NEW", L"es_NI", L"es_PA", L"es_PE",
+  L"es_PR", L"es_PY", L"es_SV", L"es_UY", L"es_VE", L"et_EE",  L"fo_FO", L"fr_FR", L"fr_FR-1990", L"fr_FR-1990_1-3-2", L"fr_FR-classique", L"fr_FR-classique_1-3-2", L"fr_FR_1-3-2", L"fy_NL",
+  L"ga_IE", L"gd_GB", L"gl_ES", L"gu_IN", L"he_IL", L"hi_IN", L"hil_PH", L"hr_HR", L"hu_HU", L"ia", L"id_ID", L"is_IS", L"it_IT", L"ku_TR",
+  L"la", L"lt_LT", L"lv_LV", L"mg_MG", L"mi_NZ", L"mk_MK", L"mos_BF", L"mr_IN", L"ms_MY", L"nb_NO", L"ne_NP", L"nl_NL", L"nn_NO", L"nr_ZA",
+  L"ns_ZA", L"ny_MW", L"oc_FR", L"pl_PL", L"pt_BR", L"pt_PT", L"ro_RO", L"ru_RU", L"ru_RU_ie", L"ru_RU_ye", L"ru_RU_yo", L"rw_RW", L"si_SI", L"sk_SK", L"sq_AL",
+  L"ss_ZA", L"st_ZA", L"sv_SE", L"sw_KE",  L"tet_ID", L"th_TH", L"tl_PH", L"tn_ZA", L"ts_ZA", L"uk_UA", L"ur_PK", L"ve_ZA", L"vi-VN", L"xh_ZA", L"zu_ZA"
 };
-const wchar_t *const AliasesTo[] = {_T ("Afrikaans"), _T ("Akan"), _T ("Bulgarian"), _T ("Catalan (Any)"), _T ("Catalan (Spain)"), _T ("Coptic (Bohairic dialect)"), _T ("Czech"), _T ("Welsh"),
-  _T ("Danish"), _T ("German (Austria)"), _T ("German (Switzerland)"), _T ("German (Germany)"), _T ("German (Old and New Spelling)"), _T ("German (Additional)"), _T ("German (New Spelling)"),
-  _T ("Greek"), _T ("English (Australia)"), _T ("English (Canada)"), _T ("English (Great Britain)"), _T ("English (Great Britain) [OED]"), _T ("English (New Zealand)"),
-  _T ("English (United States)"), _T ("English (South Africa)"), _T ("Esperanto"), _T ("Spanish (Argentina)"), _T ("Spanish (Bolivia)"), _T ("Spanish (Chile)"), _T ("Spanish (Colombia)"), _T ("Spanish (Costa Rica)"),
-  _T ("Spanish (Cuba)"), _T ("Spanish (Dominican Republic)"), _T ("Spanish (Ecuador)"), _T ("Spanish (Spain)"), _T ("Spanish (Guatemala)"), _T ("Spanish (Honduras)"), _T ("Spanish (Mexico)"),
-  _T ("Spanish (New)"), _T ("Spanish (Nicaragua)"), _T ("Spanish (Panama)"), _T ("Spanish (Peru)"), _T ("Spanish (Puerto Rico)"), _T ("Spanish (Paraguay)"), _T ("Spanish (El Salvador)"), _T ("Spanish (Uruguay)"),
-  _T ("Spanish (Bolivarian Republic of Venezuela)"), _T ("Estonian"), _T ("Faroese"), _T ("French"), _T ("French (1990)"), _T ("French (1990)"), _T ("French (Classique)"), _T ("French (Classique)"), _T ("French"), _T ("Frisian"), _T ("Irish"), _T ("Scottish Gaelic"),
-  _T ("Galician"), _T ("Gujarati"), _T ("Hebrew"), _T ("Hindi"), _T ("Filipino"), _T ("Croatian"), _T ("Hungarian"), _T ("Interlingua"), _T ("Indonesian"), _T ("Icelandic"), _T ("Italian"), _T ("Kurdish"),
-  _T ("Latin"), _T ("Lithuanian"), _T ("Latvian"), _T ("Malagasy"), _T ("Maori"), _T ("Macedonian (FYROM)"), _T ("Mossi"), _T ("Marathi"), _T ("Malay"), _T ("Norwegian (Bokmal)"), _T ("Nepali"), _T ("Dutch"),
-  _T ("Norwegian (Nynorsk)"), _T ("Ndebele"), _T ("Northern Sotho"), _T ("Chichewa"), _T ("Occitan"), _T ("Polish"), _T ("Portuguese (Brazil)"), _T ("Portuguese (Portugal)"), _T ("Romanian"), _T ("Russian"),
-  _T ("Russian (without io)"), _T ("Russian (without io)"), _T ("Russian (with io)"), _T ("Kinyarwanda"), _T ("Slovenian"), _T ("Slovak"), _T ("Alban"), _T ("Swazi"), _T ("Northern Sotho"), _T ("Swedish"),
-  _T ("Kiswahili"), _T ("Tetum"), _T ("Thai"), _T ("Tagalog"), _T ("Setswana"), _T ("Tsonga"), _T ("Ukrainian"), _T ("Urdu"), _T ("Venda"), _T ("Vietnamese"), _T ("isiXhosa"), _T ("isiZulu")
+const wchar_t *const AliasesTo[] = {L"Afrikaans", L"Akan", L"Bulgarian", L"Catalan (Any)", L"Catalan (Spain)", L"Coptic (Bohairic dialect)", L"Czech", L"Welsh",
+  L"Danish", L"German (Austria)", L"German (Switzerland)", L"German (Germany)", L"German (Old and New Spelling)", L"German (Additional)", L"German (New Spelling)",
+  L"Greek", L"English (Australia)", L"English (Canada)", L"English (Great Britain)", L"English (Great Britain [OED])", L"English (New Zealand)",
+  L"English (United States)", L"English (South Africa)", L"Esperanto", L"Spanish (Argentina)", L"Spanish (Bolivia)", L"Spanish (Chile)", L"Spanish (Colombia)", L"Spanish (Costa Rica",
+  L"Spanish (Cuba)", L"Spanish (Dominican Republic)", L"Spanish (Ecuador)", L"Spanish (Spain)", L"Spanish (Guatemala)", L"Spanish (Honduras)", L"Spanish (Mexico)",
+  L"Spanish (New)", L"Spanish (Nicaragua)", L"Spanish (Panama)", L"Spanish (Peru)", L"Spanish (Puerto Rico)", L"Spanish (Paraguay)", L"Spanish (El Salvador)", L"Spanish (Uruguay)",
+  L"Spanish (Bolivarian Republic of Venezuela)", L"Estonian", L"Faroese", L"French", L"French (1990)", L"French (1990)", L"French (Classique)", L"French (Classique)", L"French", L"Frisian", L"Irish", L"Scottish Gaelic",
+  L"Galician", L"Gujarati", L"Hebrew", L"Hindi", L"Filipino", L"Croatian", L"Hungarian", L"Interlingua", L"Indonesian", L"Icelandic", L"Italian", L"Kurdish",
+  L"Latin", L"Lithuanian", L"Latvian", L"Malagasy", L"Maori", L"Macedonian (FYROM)", L"Mossi", L"Marathi", L"Malay", L"Norwegian (Bokmal)", L"Nepali", L"Dutch",
+  L"Norwegian (Nynorsk)", L"Ndebele", L"Northern Sotho", L"Chichewa", L"Occitan", L"Polish", L"Portuguese (Brazil)", L"Portuguese (Portugal)", L"Romanian", L"Russian",
+  L"Russian (without io)", L"Russian (without io)", L"Russian (with io)", L"Kinyarwanda", L"Slovenian", L"Slovak", L"Alban", L"Swazi", L"Northern Sotho", L"Swedish",
+  L"Kiswahili", L"Tetum", L"Thai", L"Tagalog", L"Setswana", L"Tsonga", L"Ukrainian", L"Urdu", L"Venda", L"Vietnamese", L"isiXhosa", L"isiZulu"
 };
 
 // Language Aliases
@@ -616,7 +613,7 @@ BOOL SetStringWithAliasApplied (wchar_t *&Target, wchar_t *OrigName)
 #ifdef _DEBUG
   for (int i = 0; i < countof (AliasesFrom) - 1; i++)
   {
-    if (_tcscmp (AliasesFrom[i], AliasesFrom[i + 1]) >= 0)
+    if (wcscmp (AliasesFrom[i], AliasesFrom[i + 1]) >= 0)
     {
       DebugBreak ();
       // String are not sorted correctly in AliasesFrom
@@ -627,7 +624,7 @@ BOOL SetStringWithAliasApplied (wchar_t *&Target, wchar_t *OrigName)
   while (1)
   {
     int CentralElement = (Left + Right) / 2;
-    int CompareResult = _tcscmp (AliasesFrom[CentralElement], OrigName);
+    int CompareResult = wcscmp (AliasesFrom[CentralElement], OrigName);
     if (CompareResult == 0)
     {
       SetString (Target, AliasesTo[CentralElement]);
@@ -654,8 +651,8 @@ static BOOL TryToCreateDir (wchar_t *Path, BOOL Silent, HWND NppWindow)
         return FALSE;
 
       wchar_t Message[DEFAULT_BUF_SIZE];
-      _stprintf (Message, _T ("Can't create directory %s"), Path);
-      MessageBoxInfo MsgBox (NppWindow, Message, _T ("Error in directory creation"), MB_OK | MB_ICONERROR);
+      _swprintf (Message, L"Can't create directory %s", Path);
+      MessageBoxInfo MsgBox (NppWindow, Message, L"Error in directory creation", MB_OK | MB_ICONERROR);
       SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
     }
     return FALSE;
@@ -665,17 +662,17 @@ static BOOL TryToCreateDir (wchar_t *Path, BOOL Silent, HWND NppWindow)
 
 BOOL CheckForDirectoryExistence (wchar_t *Path, BOOL Silent, HWND NppWindow)
 {
-  for (unsigned int i = 0; i < _tcslen (Path); i++)
+  for (unsigned int i = 0; i < wcslen (Path); i++)
   {
-    if (Path[i] == _T ('\\'))
+    if (Path[i] == L'\\')
     {
-      Path[i] = _T ('\0');
+      Path[i] = L'\0';
       if (!PathFileExists (Path))
       {
         if (!TryToCreateDir (Path, Silent, NppWindow))
           return FALSE;
       }
-      Path[i] = _T ('\\');
+      Path[i] = L'\\';
     }
   }
   if (!PathFileExists (Path))
@@ -1037,7 +1034,7 @@ void StripEqualElements (std::vector <wchar_t *> *&Vector)
 
 wchar_t *GetLastSlashPosition (wchar_t *Path)
 {
-  return _tcsrchr (Path, _T ('\\'));
+  return wcschr (Path, L'\\');
 }
 
 // strtok_s, delimiters are all non-alphabetic and non-numeric characters except one in delim

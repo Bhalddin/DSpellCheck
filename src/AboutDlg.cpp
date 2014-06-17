@@ -76,7 +76,7 @@ bool GetProductAndVersion (wchar_t *&strProductVersion)
   CLEAN_AND_ZERO_ARR (strProductVersion);
 
   strProductVersion = new wchar_t[DEFAULT_BUF_SIZE];
-  _stprintf (strProductVersion, _T ("Version: %u.%u.%u.%u"),     HIWORD (pFixedInfo->dwProductVersionMS),
+  _swprintf (strProductVersion, L"Version: %u.%u.%u.%u",     HIWORD (pFixedInfo->dwProductVersionMS),
     LOWORD (pFixedInfo->dwProductVersionMS),
     HIWORD (pFixedInfo->dwProductVersionLS),
     LOWORD (pFixedInfo->dwProductVersionLS));
@@ -111,7 +111,7 @@ BOOL CALLBACK AboutDlg::run_dlgProc (UINT message, WPARAM wParam, LPARAM lParam)
           PNMLINK pNMLink = (PNMLINK)lParam;
           LITEM   item    = pNMLink->item;
 
-          ShellExecute(NULL, _T ("open"), item.szUrl, NULL, NULL, SW_SHOW);
+          ShellExecute(NULL, L"open", item.szUrl, NULL, NULL, SW_SHOW);
 
           return TRUE;
         }

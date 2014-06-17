@@ -51,7 +51,7 @@ struct AvailableLangInfo
 
   bool operator < (const AvailableLangInfo &rhs ) const
   {
-    return (_tcscmp (Name, rhs.Name) < 0);
+    return (wcscmp (Name, rhs.Name) < 0);
   }
 };
 

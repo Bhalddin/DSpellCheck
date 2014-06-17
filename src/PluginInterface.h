@@ -65,8 +65,6 @@ extern "C" __declspec(dllexport) FuncItem * getFuncsArray(int *);
 extern "C" __declspec(dllexport) void beNotified(SCNotification *);
 extern "C" __declspec(dllexport) LRESULT messageProc(UINT Message, WPARAM wParam, LPARAM lParam);
 
-#ifdef UNICODE
 extern "C" __declspec(dllexport) BOOL isUnicode();
-#endif //UNICODE
 
 #endif //PLUGININTERFACE_H

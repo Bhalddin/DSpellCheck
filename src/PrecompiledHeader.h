@@ -30,7 +30,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <windowsx.h>
 #include <wchar.h>
 #include <vector>
-#include <tchar.h>
 #include <Shlobj.h>
 
 #if (_MSC_VER >= 1700)

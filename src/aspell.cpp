@@ -162,10 +162,10 @@ void GetDefaultAspellPath (wchar_t *&Path)
   HKEY    hKey = NULL;
   DWORD   size = MAX_PATH;
 
-  if (ERROR_SUCCESS == ::RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T ("SOFTWARE\\Aspell"), 0, KEY_READ, &hKey))
+  if (ERROR_SUCCESS == ::RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Aspell", 0, KEY_READ, &hKey))
   {
-    if (ERROR_SUCCESS == ::RegQueryValueEx(hKey, _T ("Path"), NULL ,NULL, (LPBYTE)pszPath, &size))
-      wcscat(pszPath, _T ("\\aspell-15.dll"));
+    if (ERROR_SUCCESS == ::RegQueryValueEx(hKey, L"Path", NULL ,NULL, (LPBYTE)pszPath, &size))
+      wcscat(pszPath, L"\\aspell-15.dll");
     ::RegCloseKey(hKey);
   }
   else
@@ -177,7 +177,7 @@ void GetDefaultAspellPath (wchar_t *&Path)
       CSIDL_PROGRAM_FILES,
       FALSE );
     PathAppend(pszPath, Pf);
-    PathAppend(pszPath, _T("\\Aspell\\bin\\aspell-15.dll"));
+    PathAppend(pszPath, L"\\Aspell\\bin\\aspell-15.dll");
   }
   SetString (Path, pszPath);
 }
@@ -353,12 +353,8 @@ void UnloadAspell(void)
 void AspellErrorMsgBox(HWND hWnd, LPCSTR szErrorMsg)
 {
   wchar_t	szMsg[MAX_PATH];
-#ifdef UNICODE
   wchar_t	szTemp[MAX_PATH];
   ::MultiByteToWideChar(CP_ACP, 0, szErrorMsg, -1, szTemp, MAX_PATH);
-  _stprintf(szMsg, _T("Error:\n%s"), szTemp);
-#else
-  _stprintf(szMsg, _T("Error:\n%s"), szErrorMsg);
-#endif
-  ::MessageBox(hWnd, szMsg, _T("GNU Aspell"), MB_OK);
+  _swprintf(szMsg, L"Error:\n%s", szTemp);
+  ::MessageBox(hWnd, szMsg, L"GNU Aspell", MB_OK);
 }

@@ -1,0 +1,217 @@
+From b85678569f893474566450b0287f2af2639f8216 Mon Sep 17 00:00:00 2001
+From: Sergey Semushin <predelnik@gmail.com>
+Date: Sat, 28 Dec 2013 20:21:23 +0400
+Subject: [PATCH] Don't use selection. Invalid patch.
+
+---
+ src/DSpellCheck.rc   |  3 ++-
+ src/SettingsDlg.cpp  |  7 +++++++
+ src/SettingsDlg.h    |  2 ++
+ src/SpellChecker.cpp | 30 ++++++++++++++++++++++++------
+ src/SpellChecker.h   |  3 ++-
+ src/resource.h       |  1 +
+ 6 files changed, 38 insertions(+), 8 deletions(-)
+
+diff --git a/src/DSpellCheck.rc b/src/DSpellCheck.rc
+index a723adf..27f4427 100644
+--- a/src/DSpellCheck.rc
++++ b/src/DSpellCheck.rc
+@@ -217,7 +217,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 1
+ 
+ 
+ LANGUAGE LANG_ENGLISH, SUBLANG_NEUTRAL
+-IDD_SIMPLE DIALOGEX 0, 0, 205, 234
++IDD_SIMPLE DIALOGEX 0, 0, 206, 255
+ STYLE DS_SHELLFONT | WS_CHILDWINDOW
+ FONT 8, "MS Shell Dlg", 400, 0, 1
+ {
+@@ -248,6 +248,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 1
+     PUSHBUTTON      "Reset to Default", IDC_RESETASPELLPATH, 9, 55, 69, 13
+     EDITTEXT        IDC_SYSTEMPATH, 9, 42, 155, 12, ES_AUTOHSCROLL, WS_EX_ACCEPTFILES
+     PUSHBUTTON      "Dictionary Options...", IDC_DIC_OPTIONS, 9, 88, 86, 13
++    AUTOCHECKBOX    "Select Misspelled Word Prior to Editing/Adding/Ignoring", IDC_SELECT_WORDS, 1, 222, 191, 8
+ }
+ 
+ 
+diff --git a/src/SettingsDlg.cpp b/src/SettingsDlg.cpp
+index 21b8ca8..a9b529c 100644
+--- a/src/SettingsDlg.cpp
++++ b/src/SettingsDlg.cpp
+@@ -209,6 +209,7 @@ void SimpleDlg::ApplySettings (SpellChecker *SpellCheckerInstance)
+   SpellCheckerInstance->SetSuggType (ComboBox_GetCurSel (HSuggType));
+   SpellCheckerInstance->SetCheckComments (Button_GetCheck (HCheckComments) == BST_CHECKED);
+   SpellCheckerInstance->SetDecodeNames (Button_GetCheck (HDecodeNames) == BST_CHECKED);
++  SpellCheckerInstance->SetSelectWords (Button_GetCheck (HSelectWords) == BST_CHECKED);
+   UpdateLangsMenu ();
+   CLEAN_AND_ZERO_ARR (Buf);
+ }
+@@ -324,6 +325,11 @@ void SimpleDlg::SetDecodeNames (BOOL Value)
+   Button_SetCheck (HDecodeNames, Value ? BST_CHECKED : BST_UNCHECKED);
+ }
+ 
++void SimpleDlg::SetSelectWords (BOOL Value)
++{
++  Button_SetCheck (HSelectWords, Value ? BST_CHECKED : BST_UNCHECKED);
++}
++
+ int SimpleDlg::GetSelectedLib ()
+ {
+   return ComboBox_GetCurSel (HLibrary);
+@@ -381,6 +387,7 @@ BOOL CALLBACK SimpleDlg::run_dlgProc (UINT message, WPARAM wParam, LPARAM lParam
+       HAspellResetPath = ::GetDlgItem (_hSelf, IDC_RESETASPELLPATH);
+       HHunspellResetPath = ::GetDlgItem (_hSelf, IDC_RESETHUNSPELLPATH);
+       HSystemPath = ::GetDlgItem (_hSelf, IDC_SYSTEMPATH);
++      HSelectWords = ::GetDlgItem (_hSelf, IDC_SELECT_WORDS);
+       ComboBox_AddString (HLibrary, _T ("Aspell"));
+       ComboBox_AddString (HLibrary, _T ("Hunspell"));
+       ComboBox_AddString (HHunspellPathType, _T ("For Current User"));
+diff --git a/src/SettingsDlg.h b/src/SettingsDlg.h
+index 454ebed..58bbcb3 100644
+--- a/src/SettingsDlg.h
++++ b/src/SettingsDlg.h
+@@ -51,6 +51,7 @@ public:
+   void SetLibMode (int LibMode);
+   void SetDecodeNames (BOOL Value);
+   void ApplyLibChange (SpellChecker *SpellCheckerInstance);
++  void SetSelectWords (BOOL Value);
+ 
+ protected:
+   __override virtual BOOL CALLBACK run_dlgProc (UINT message, WPARAM wParam, LPARAM lParam);
+@@ -85,6 +86,7 @@ private:
+   HWND HAspellResetPath;
+   HWND HHunspellResetPath;
+   HWND HSystemPath;
++  HWND HSelectWords;
+ 
+   HMODULE _hUxTheme;
+   OTDProc _OpenThemeData;
+diff --git a/src/SpellChecker.cpp b/src/SpellChecker.cpp
+index bb1518d..8a58013 100644
+--- a/src/SpellChecker.cpp
++++ b/src/SpellChecker.cpp
+@@ -2280,7 +2280,8 @@ void SpellChecker::ProcessMenuResult (UINT MenuId)
+         {
+           ApplyConversions (SelectedWord);
+           CurrentSpeller->IgnoreAll (SelectedWord);
+-          SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETSEL, WUCPosition + WUCLength , WUCPosition + WUCLength );
++          if (SelectWords)
++            SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETSEL, WUCPosition + WUCLength , WUCPosition + WUCLength );
+           RecheckVisibleBothViews ();
+         }
+         else if (Result == MID_ADDTODICTIONARY)
+@@ -2291,14 +2292,16 @@ void SpellChecker::ProcessMenuResult (UINT MenuId)
+             DicNum = 0;
+ 
+           CurrentSpeller->AddToDictionary (SelectedWord, DicNum);
+-          SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETSEL, WUCPosition + WUCLength , WUCPosition + WUCLength );
++          if (SelectWords)
++            SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETSEL, WUCPosition + WUCLength , WUCPosition + WUCLength );
+           RecheckVisibleBothViews ();
+         }
+         else if (Result >= MID_ADD_TO_DICS_START)
+         {
+           ApplyConversions (SelectedWord);
+           CurrentSpeller->AddToDictionary (SelectedWord, Result - MID_ADD_TO_DICS_START);
+-          SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETSEL, WUCPosition + WUCLength , WUCPosition + WUCLength );
++          if (SelectWords)
++            SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETSEL, WUCPosition + WUCLength , WUCPosition + WUCLength );
+           RecheckVisibleBothViews ();
+         }
+         else if ((unsigned int)Result <= LastSuggestions->size ())
+@@ -2317,7 +2320,14 @@ void SpellChecker::ProcessMenuResult (UINT MenuId)
+           }
+           else
+           */
+-          SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_REPLACESEL, 0, (LPARAM) AnsiBuf);
++          if (SelectWords)
++            SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_REPLACESEL, 0, (LPARAM) AnsiBuf);
++          else
++            {
++              SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETTARGETSTART, WUCPosition);
++              SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETTARGETEND, WUCPosition + WUCLength);
++              SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_REPLACETARGET, strlen (AnsiBuf), (LPARAM) AnsiBuf);
++            }
+ 
+           CLEAN_AND_ZERO_ARR (AnsiBuf);
+         }
+@@ -2373,7 +2383,8 @@ void SpellChecker::FillSuggestionsMenu (HMENU Menu)
+   Range.chrg.cpMin = WUCPosition;
+   Range.chrg.cpMax = WUCPosition + WUCLength;
+   Range.lpstrText = new char [WUCLength + 1];
+-  PostMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETSEL, Pos, Pos + WUCLength);
++  if (SelectWords)
++    PostMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_SETSEL, Pos, Pos + WUCLength);
+   SuggestionMenuItems = new std::vector <SuggestionsMenuItem *>;
+ 
+   SendMsgToEditor (GetCurrentScintilla (), NppDataInstance, SCI_GETTEXTRANGE, 0, (LPARAM) &Range);
+@@ -2680,6 +2691,7 @@ void SpellChecker::SaveSettings ()
+   SaveToIni (_T ("Proxy_Is_Anonymous"), ProxyAnonymous, TRUE);
+   SaveToIni (_T ("Proxy_Type"), ProxyType, 0);
+   SaveToIni (_T ("Recheck_Prevention_Type"), RecheckPreventionType, 0);
++  SaveToIni (_T ("Use_Selection_For_Misspelled_Words"), SelectWords, 0);
+   std::map<TCHAR *, DWORD, bool ( *)(TCHAR *, TCHAR *)>::iterator it = SettingsToSave->begin ();
+   for (; it != SettingsToSave->end (); ++it)
+   {
+@@ -2811,6 +2823,7 @@ void SpellChecker::LoadSettings ()
+   LoadFromIni (ProxyPort, _T ("Proxy_Port"), 808);
+   LoadFromIni (ProxyAnonymous, _T ("Proxy_Is_Anonymous"), TRUE);
+   LoadFromIni (ProxyType, _T ("Proxy_Type"), 0);
++  LoadFromIni (SelectWords, _T ("Use_Selection_For_Misspelled_Words"), 0);
+   LoadFromIni (Value, _T ("Recheck_Prevention_Type"), 0);
+   RecheckPreventionType = (RecheckPreventionTypes::e) Value;
+ }
+@@ -3828,4 +3841,9 @@ void SpellChecker::ErrorMsgBox (const TCHAR *message)
+   TCHAR buf [DEFAULT_BUF_SIZE];
+   _stprintf_s (buf, _T ("%s"), "DSpellCheck Error:", message, _tcslen (message));
+   MessageBox (NppDataInstance->_nppHandle, message, _T("Error Happened!"), MB_OK | MB_ICONSTOP);
+-}
+\ No newline at end of file
++}
++
++void SpellChecker::SetSelectWords (BOOL Value)
++{
++  SelectWords = Value;
++}
+diff --git a/src/SpellChecker.h b/src/SpellChecker.h
+index 12f5985..8f1ee54 100644
+--- a/src/SpellChecker.h
++++ b/src/SpellChecker.h
+@@ -134,6 +134,7 @@ public:
+   const char *GetDelimiters ();
+   const char *GetDelimiterException ();
+   void SetRecheckPreventionType (RecheckPreventionTypes::e Value);
++  void SetSelectWords( BOOL Value );
+ 
+ private:
+   enum CheckTextMode
+@@ -198,7 +199,6 @@ private:
+   void LoadFromIni (TCHAR *&Value, const TCHAR *Name, const TCHAR *DefaultValue, BOOL InQuotes = 0);
+   void LoadFromIni (int &Value, const TCHAR *Name, int DefaultValue);
+   void LoadFromIniUtf8 (char *&Value, const TCHAR *Name, const char *DefaultValue, BOOL InQuotes = 0);
+-
+ private:
+ 
+   std::vector <LanguageName> *CurrentLangs;
+@@ -248,6 +248,7 @@ private:
+   BOOL DecodeNames;
+   BOOL ShowOnlyKnown;
+   BOOL InstallSystem;
++  BOOL SelectWords;
+   int SBSize;
+   int SBTrans;
+   int BufferSize;
+diff --git a/src/resource.h b/src/resource.h
+index eae1773..17c51e4 100644
+--- a/src/resource.h
++++ b/src/resource.h
+@@ -40,6 +40,7 @@
+ #define IDC_BROWSEASPELLPATH                    1007
+ #define IDC_HOSTNAME                            1007
+ #define IDD_SIMPLE                              1007
++#define IDC_SELECT_WORDS                        1008
+ #define IDC_USERNAME                            1008
+ #define IDD_ADVANCED                            1008
+ #define IDC_ADDRESS                             1009
+-- 
+1.8.3.msysgit.0
+

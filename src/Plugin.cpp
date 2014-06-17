@@ -40,13 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "StackWalker/StackWalker.h"
 
-const wchar_t configFileName[] = _T ("DSpellCheck.ini");
-
-#ifdef UNICODE
-#define generic_itoa _itow
-#else
-#define generic_itoa itoa
-#endif
+const wchar_t configFileName[] = L"DSpellCheck.ini";
 
 FuncItem funcItem[nbFunc];
 BOOL ResourcesInited = FALSE;
@@ -157,7 +151,7 @@ POINT Pos;
 GetCursorPos (&Pos);
 if (WindowFromPoint (Pos) == GetScintillaWindow (&nppData))
 {
-OutputDebugString (_T ("WM_INITMENUPOPUP\n"));
+OutputDebugString (L"WM_INITMENUPOPUP\n");
 SendEvent (EID_APPLYMENUACTION);
 PostMessageToMainThread (TM_CONTEXT_MENU, ((tagCWPSTRUCT *)lParam)->wParam, 0);
 }
@@ -171,10 +165,10 @@ return CallNextHookEx(HCmHook, nCode, wParam, lParam);
 void GetDefaultHunspellPath_ (wchar_t *&Path)
 {
   Path = new wchar_t[MAX_PATH];
-  _tcscpy (Path, IniFilePath);
-  wchar_t *Pointer = _tcsrchr (Path, _T ('\\'));
+  wcscpy (Path, IniFilePath);
+  wchar_t *Pointer = wcschr (Path, L'\\');
   *Pointer = 0;
-  _tcscat (Path, _T ("\\Hunspell"));
+  wcscat (Path, L"\\Hunspell");
 }
 
 void pluginInit(HANDLE hModuleArg)
@@ -230,7 +224,7 @@ public:
 protected:
   virtual void OnOutput(LPCSTR szText)
     {
-      FILE *fp = _tfopen (_T ("DSpellCheck_Debug.log"), _T ("a"));
+      FILE *fp = _wfopen (L"DSpellCheck_Debug.log", L"a");
       fprintf (fp, szText);
       fclose (fp);
       StackWalker::OnOutput(szText);
@@ -266,7 +260,7 @@ DWORD WINAPI ThreadMain (LPVOID lpParam)
     dwWaitResult = MsgWaitForMultipleObjectsEx (EID_MAX, hEvent, INFINITE, QS_ALLEVENTS, MWMO_INPUTAVAILABLE);
     if (dwWaitResult == (unsigned int) - 1)
     {
-      SpellCheckerInstance->ErrorMsgBox (_T ("Thread has died"));
+      SpellCheckerInstance->ErrorMsgBox (L"Thread has died");
       break;
     }
 
@@ -311,7 +305,7 @@ DWORD WINAPI ThreadNetwork (LPVOID lpParam)
     dwWaitResult = MsgWaitForMultipleObjectsEx (EID_NETWORK_MAX, hNetworkEvent, INFINITE, QS_ALLEVENTS, MWMO_INPUTAVAILABLE);
     if (dwWaitResult == (unsigned int) - 1)
     {
-      SpellCheckerInstance->ErrorMsgBox (_T ("Thread has died"));
+      SpellCheckerInstance->ErrorMsgBox (L"Thread has died");
       break;
     }
 
@@ -462,7 +456,7 @@ void StartSettings ()
 
 void StartManual ()
 {
-  ShellExecute (NULL, _T ("open"), _T ("https://github.com/Predelnik/DSpellCheck/wiki/Manual"), NULL, NULL, SW_SHOW);
+  ShellExecute (NULL, L"open", L"https://github.com/Predelnik/DSpellCheck/wiki/Manual", NULL, NULL, SW_SHOW);
 }
 
 void StartAboutDlg ()
@@ -526,8 +520,8 @@ void commandMenuInit()
   wchar_t Buf[DEFAULT_BUF_SIZE];
   wchar_t *EndPtr;
   int x;
-  GetPrivateProfileString (_T ("SpellCheck"), _T ("Recheck_Delay"), _T ("500"), Buf, DEFAULT_BUF_SIZE, IniFilePath);
-  x = _tcstol (Buf, &EndPtr, 10);
+  GetPrivateProfileString (L"SpellCheck", L"Recheck_Delay", L"500", Buf, DEFAULT_BUF_SIZE, IniFilePath);
+  x = wcstol (Buf, &EndPtr, 10);
   if (*EndPtr)
     SetRecheckDelay (500, 0);
   else
@@ -599,7 +593,7 @@ HMENU GetDSpellCheckMenu ()
     StrLen = GetMenuString (PluginsMenu, i, 0, 0, MF_BYPOSITION);
     Buf = new wchar_t[StrLen + 1];
     GetMenuString (PluginsMenu, i, Buf, StrLen + 1, MF_BYPOSITION);
-    if (_tcscmp (Buf, NPP_PLUGIN_NAME) == 0)
+    if (wcscmp (Buf, NPP_PLUGIN_NAME) == 0)
     {
       MENUITEMINFO Mif;
       Mif.fMask = MIIM_ID;
