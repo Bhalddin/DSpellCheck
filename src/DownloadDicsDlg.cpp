@@ -54,7 +54,7 @@ void DownloadDicsDlg::DoDialog ()
 
 void DownloadDicsDlg::FillFileList ()
 {
-  TCHAR Buf[DEFAULT_BUF_SIZE];
+  wchar_t Buf[DEFAULT_BUF_SIZE];
   ComboBox_GetText (HAddress, Buf, DEFAULT_BUF_SIZE);
   GetDownloadDics ()->DoFtpOperation (FILL_FILE_LIST, Buf);
 }
@@ -105,10 +105,10 @@ static BOOL IsNetworkThreadBeingKilled ()
   return FALSE;
 }
 
-DWORD DownloadDicsDlg::AskReplacementMessage (TCHAR *DicName)
+DWORD DownloadDicsDlg::AskReplacementMessage (wchar_t *DicName)
 {
-  TCHAR ReplaceMessage[DEFAULT_BUF_SIZE];
-  TCHAR *TBuf = 0;
+  wchar_t ReplaceMessage[DEFAULT_BUF_SIZE];
+  wchar_t *TBuf = 0;
   SetStringWithAliasApplied (TBuf, DicName);
   _stprintf_s (ReplaceMessage, _T ("Looks like %s dictionary is already present. Do you want to replace it?"), TBuf);
   CLEAN_AND_ZERO_ARR (TBuf);
@@ -120,23 +120,23 @@ DWORD DownloadDicsDlg::AskReplacementMessage (TCHAR *DicName)
 void DownloadDicsDlg::DownloadSelected ()
 {
   int Count = ListBox_GetCount (HFileList);
-  TCHAR TempPath [MAX_PATH];
-  TCHAR LocalPath [MAX_PATH];
-  TCHAR *ConvertedDicName = 0;
+  wchar_t TempPath [MAX_PATH];
+  wchar_t LocalPath [MAX_PATH];
+  wchar_t *ConvertedDicName = 0;
   char *LocalPathANSI = 0;
-  TCHAR Buf[DEFAULT_BUF_SIZE];
+  wchar_t Buf[DEFAULT_BUF_SIZE];
   char *DicFileNameANSI = 0;
   std::map<char *, int, bool (*)(char *, char *)>::iterator it;
-  TCHAR *DicFileName = 0;
-  TCHAR DicFileLocalPath[MAX_PATH];
-  TCHAR HunspellDicPath[MAX_PATH];
-  TCHAR Message[DEFAULT_BUF_SIZE];
-  TCHAR *FileName = 0;
+  wchar_t *DicFileName = 0;
+  wchar_t DicFileLocalPath[MAX_PATH];
+  wchar_t HunspellDicPath[MAX_PATH];
+  wchar_t Message[DEFAULT_BUF_SIZE];
+  wchar_t *FileName = 0;
   BOOL IsAffFile = FALSE;
   BOOL IsDicFile = FALSE;
   unz_file_info FInfo;
   char FileCopyBuf[(BUF_SIZE_FOR_COPY)];
-  TCHAR ProgMessage[DEFAULT_BUF_SIZE];
+  wchar_t ProgMessage[DEFAULT_BUF_SIZE];
   GetTempPath (MAX_PATH, TempPath);
   if (!CheckForDirectoryExistence (TempPath, FALSE, _hParent)) // If path isn't exist we're gonna try to create it else it's finish
   {
@@ -165,7 +165,7 @@ void DownloadDicsDlg::DownloadSelected ()
     if (CheckedListBox_GetCheckState (HFileList, i) == BST_CHECKED)
     {
       SupposedDownloadedCount++;
-      FileName = new TCHAR [_tcslen (CurrentLangsFiltered->at (i).OrigName) + 4 + 1];
+      FileName = new wchar_t [_tcslen (CurrentLangsFiltered->at (i).OrigName) + 4 + 1];
       FileName[0] = _T ('\0');
       _tcscat (FileName, CurrentLangsFiltered->at (i).OrigName);
       _tcscat (FileName, _T (".zip"));
@@ -380,10 +380,10 @@ clean_and_continue:
   CLEAN_AND_ZERO_ARR (ConvertedDicName);
 }
 
-void FtpTrim (TCHAR *FtpAddress)
+void FtpTrim (wchar_t *FtpAddress)
 {
   StrTrim (FtpAddress, _T (" "));
-  const TCHAR FtpPrefix[] = _T ("ftp://");
+  const wchar_t FtpPrefix[] = _T ("ftp://");
   int FtpPrefixLen = _tcslen (FtpPrefix);
   for (unsigned int i = 0; i < _tcslen (FtpAddress); i++) // Exchanging slashes
   {
@@ -454,7 +454,7 @@ public:
   {
     BytesReceived += lReceivedBytes;
     ProgressInstance->SetProgress (BytesReceived * 100 / TargetSize);
-    TCHAR Message[DEFAULT_BUF_SIZE];
+    wchar_t Message[DEFAULT_BUF_SIZE];
 
     _stprintf (Message, _T ("%d / %d bytes downloaded (%d %%)"), BytesReceived, TargetSize, BytesReceived * 100 / TargetSize);
     ProgressInstance->SetBottomMessage (Message);
@@ -476,9 +476,9 @@ void DownloadDicsDlg::SetCancelPressed (BOOL Value)
 
 #define INITIAL_BUFFER_SIZE 50 * 1024
 #define INITIAL_SMALL_BUFFER_SIZE 10 * 1024
-void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, TCHAR *Address, TCHAR *FileName, TCHAR *Location)
+void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, wchar_t *Address, wchar_t *FileName, wchar_t *Location)
 {
-  TCHAR *ProxyFinalString = new TCHAR [_tcslen (SpellCheckerInstance->GetProxyHostName ()) + 10];
+  wchar_t *ProxyFinalString = new wchar_t [_tcslen (SpellCheckerInstance->GetProxyHostName ()) + 10];
   char *FileBuffer = 0;
   _stprintf (ProxyFinalString, _T ("%s:%d"), SpellCheckerInstance->GetProxyHostName (), SpellCheckerInstance->GetProxyPort ());
   HINTERNET WinInetHandle = InternetOpen (_T ("DSpellCheck"), INTERNET_OPEN_TYPE_PROXY, ProxyFinalString, _T (""), 0);
@@ -496,7 +496,7 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, T
   int Error = 0;
 
   FtpTrim (Address);
-  TCHAR *Url = new TCHAR [_tcslen (Address) + (Type == DOWNLOAD_FILE ? _tcslen (FileName) : 0) + 6 + 1];
+  wchar_t *Url = new wchar_t [_tcslen (Address) + (Type == DOWNLOAD_FILE ? _tcslen (FileName) : 0) + 6 + 1];
   _tcscpy (Url, _T ("ftp://"));
   _tcscat (Url, Address);
   if (Type == DOWNLOAD_FILE)
@@ -514,7 +514,7 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, T
     if (Type == FILL_FILE_LIST)
     {
       StatusColor = COLOR_FAIL;
-      TCHAR Buf[256];
+      wchar_t Buf[256];
 
       _stprintf (Buf, _T ("Status: URL cannot be opened (Error code: %d)"), GetLastError ());
       Static_SetText (HStatus, Buf);
@@ -548,7 +548,7 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, T
     if (Type == FILL_FILE_LIST)
     {
       StatusColor = COLOR_FAIL;
-      TCHAR Buf[256];
+      wchar_t Buf[256];
       _stprintf (Buf, _T ("Status: Query status code failed (Error: %d)"), GetLastError ());
       Static_SetText (HStatus, Buf);
     }
@@ -563,7 +563,7 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, T
         Static_SetText (HStatus, _T ("Status: Proxy Authorization Required"));
       else
       {
-        TCHAR Buf[256];
+        wchar_t Buf[256];
 
         _stprintf (Buf, _T ("Status: Bad status code (%d)"), Code);
         Static_SetText (HStatus, Buf);
@@ -603,8 +603,8 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, T
       CurPos += BytesRead;
     }
     CurPos = FileBuffer;
-    TCHAR *FileName = 0;
-    TCHAR *FileNameCopy = 0;
+    wchar_t *FileName = 0;
+    wchar_t *FileNameCopy = 0;
     int count = 0;
     // Bad Parsing. Really, really bad. I'm sorry :(
     if (CurPos == 0)
@@ -675,7 +675,7 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, T
     int Len = ComboBox_GetTextLength (HAddress) + 1;
     if (CheckIfSavingIsNeeded)
     {
-      TCHAR *NewServer = new TCHAR [Len];
+      wchar_t *NewServer = new wchar_t [Len];
       ComboBox_GetText (HAddress, NewServer, Len);
       PostMessageToMainThread (TM_ADD_USER_SERVER, (WPARAM) NewServer, 0);
     }
@@ -692,7 +692,7 @@ void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, T
     DWORD BytesReadTotal = 0;
     DWORD FinalSize = 0;
     FileName[_tcslen (FileName) - 4] = _T ('\0');
-    TCHAR Message[DEFAULT_BUF_SIZE];
+    wchar_t Message[DEFAULT_BUF_SIZE];
 
     if (PathFileExists (Location))
     {
@@ -748,9 +748,9 @@ cleanup:
   CLEAN_AND_ZERO_ARR (Url);
 }
 
-void DownloadDicsDlg::DoFtpOperation (FTP_OPERATION_TYPE Type, TCHAR *Address, TCHAR *FileName, TCHAR *Location)
+void DownloadDicsDlg::DoFtpOperation (FTP_OPERATION_TYPE Type, wchar_t *Address, wchar_t *FileName, wchar_t *Location)
 {
-  TCHAR *Folders = 0;
+  wchar_t *Folders = 0;
   Observer *ProgressUpdater = 0;
   if (Type == FILL_FILE_LIST)
   {
@@ -769,7 +769,7 @@ void DownloadDicsDlg::DoFtpOperation (FTP_OPERATION_TYPE Type, TCHAR *Address, T
   }
 
   FtpTrim (Address);
-  TCHAR *Url = new TCHAR[_tcslen (Address) + 6 + 1];
+  wchar_t *Url = new wchar_t[_tcslen (Address) + 6 + 1];
   _tcscpy (Url, _T ("ftp://"));
   _tcsncat (Url, Address, _tcslen (Address) - 1);
   Folders = _tcschr (Address, _T ('/'));
@@ -813,7 +813,7 @@ void DownloadDicsDlg::DoFtpOperation (FTP_OPERATION_TYPE Type, TCHAR *Address, T
       goto cleanup;
     }
 
-    TCHAR *Buf = 0;
+    wchar_t *Buf = 0;
     int count = 0;
 
     for (unsigned int i = 0; i < List.size (); i++)
@@ -843,7 +843,7 @@ void DownloadDicsDlg::DoFtpOperation (FTP_OPERATION_TYPE Type, TCHAR *Address, T
     int Len = ComboBox_GetTextLength (HAddress) + 1;
     if (CheckIfSavingIsNeeded)
     {
-      TCHAR *NewServer = new TCHAR [Len];
+      wchar_t *NewServer = new wchar_t [Len];
       ComboBox_GetText (HAddress, NewServer, Len);
       PostMessageToMainThread (TM_ADD_USER_SERVER, (WPARAM) NewServer, 0);
     }

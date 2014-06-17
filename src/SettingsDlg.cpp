@@ -56,7 +56,7 @@ void SimpleDlg::DisableLanguageCombo (BOOL Disable)
 }
 
 // Called from main thread, beware!
-BOOL SimpleDlg::AddAvailableLanguages (std::vector <LanguageName> *LangsAvailable, const TCHAR *CurrentLanguage, const TCHAR *MultiLanguages, HunspellInterface *HunspellSpeller)
+BOOL SimpleDlg::AddAvailableLanguages (std::vector <LanguageName> *LangsAvailable, const wchar_t *CurrentLanguage, const wchar_t *MultiLanguages, HunspellInterface *HunspellSpeller)
 {
   ComboBox_ResetContent (HComboLanguage);
   ListBox_ResetContent (GetLangList ()->GetListBox ());
@@ -64,7 +64,7 @@ BOOL SimpleDlg::AddAvailableLanguages (std::vector <LanguageName> *LangsAvailabl
 
   int SelectedIndex = 0;
   unsigned int i = 0;
-  TCHAR *ConvertedBuf = 0;
+  wchar_t *ConvertedBuf = 0;
 
   for (i = 0; i < LangsAvailable->size (); i++)
   {
@@ -75,7 +75,7 @@ BOOL SimpleDlg::AddAvailableLanguages (std::vector <LanguageName> *LangsAvailabl
     ListBox_AddString (GetLangList ()->GetListBox (), LangsAvailable->at (i).AliasName);
     if (HunspellSpeller)
     {
-      TCHAR Buf[DEFAULT_BUF_SIZE];
+      wchar_t Buf[DEFAULT_BUF_SIZE];
       _tcscpy (Buf, LangsAvailable->at (i).AliasName);
       if (HunspellSpeller->GetLangOnlySystem (LangsAvailable->at (i).OrigName))
         _tcscat (Buf, _T (" [!For All Users]"));
@@ -91,9 +91,9 @@ BOOL SimpleDlg::AddAvailableLanguages (std::vector <LanguageName> *LangsAvailabl
 
   ComboBox_SetCurSel (HComboLanguage, SelectedIndex);
 
-  TCHAR *Context = 0;
-  TCHAR *MultiLanguagesCopy = 0;
-  TCHAR *Token = 0;
+  wchar_t *Context = 0;
+  wchar_t *MultiLanguagesCopy = 0;
+  wchar_t *Token = 0;
   int Index = 0;
   SetString (MultiLanguagesCopy, MultiLanguages);
   CheckedListBox_EnableCheckAll (GetLangList ()->GetListBox (), BST_UNCHECKED);
@@ -166,7 +166,7 @@ void SimpleDlg::ApplyLibChange (SpellChecker *SpellCheckerInstance)
 // Called from main thread, beware!
 void SimpleDlg::ApplySettings (SpellChecker *SpellCheckerInstance)
 {
-  TCHAR *Buf = 0;
+  wchar_t *Buf = 0;
   char *Lang = 0;
   int TextLen = 0;
   int LangCount = ComboBox_GetCount (HComboLanguage);
@@ -190,7 +190,7 @@ void SimpleDlg::ApplySettings (SpellChecker *SpellCheckerInstance)
     }
   }
   SpellCheckerInstance->RecheckVisible ();
-  Buf = new TCHAR[DEFAULT_BUF_SIZE];
+  Buf = new wchar_t[DEFAULT_BUF_SIZE];
   Edit_GetText (HSuggestionsNum, Buf, DEFAULT_BUF_SIZE);
   SpellCheckerInstance->SetSuggestionsNum (_ttoi (Buf));
   Edit_GetText (HLibPath, Buf, DEFAULT_BUF_SIZE);
@@ -218,7 +218,7 @@ void SimpleDlg::SetLibMode (int LibMode)
   ComboBox_SetCurSel (HLibrary, LibMode);
 }
 
-void SimpleDlg::FillLibInfo (int Status, TCHAR *AspellPath, TCHAR *HunspellPath, TCHAR *HunspellAdditionalPath)
+void SimpleDlg::FillLibInfo (int Status, wchar_t *AspellPath, wchar_t *HunspellPath, wchar_t *HunspellAdditionalPath)
 {
   if (GetSelectedLib () == 0)
   {
@@ -239,7 +239,7 @@ void SimpleDlg::FillLibInfo (int Status, TCHAR *AspellPath, TCHAR *HunspellPath,
       AspellStatusColor = COLOR_FAIL;
       Static_SetText (HAspellStatus, _T ("Aspell Status: Fail"));
     }
-    TCHAR *Path = 0;
+    wchar_t *Path = 0;
     GetActualAspellPath (Path, AspellPath);
     Edit_SetText (HLibPath, Path);
 
@@ -288,12 +288,12 @@ void SimpleDlg::FillLibInfo (int Status, TCHAR *AspellPath, TCHAR *HunspellPath,
 
 void SimpleDlg::FillSugestionsNum (int SuggestionsNum)
 {
-  TCHAR Buf[10];
+  wchar_t Buf[10];
   _itot_s (SuggestionsNum, Buf, 10);
   Edit_SetText (HSuggestionsNum, Buf);
 }
 
-void SimpleDlg::SetFileTypes (BOOL CheckThose, const TCHAR *FileTypes)
+void SimpleDlg::SetFileTypes (BOOL CheckThose, const wchar_t *FileTypes)
 {
   if (!CheckThose)
   {
@@ -351,9 +351,9 @@ BOOL CALLBACK SimpleDlg::run_dlgProc (UINT message, WPARAM wParam, LPARAM lParam
 {
   char *LangString = NULL;
   int length = 0;
-  TCHAR Buf[DEFAULT_BUF_SIZE];
+  wchar_t Buf[DEFAULT_BUF_SIZE];
   int x;
-  TCHAR *EndPtr;
+  wchar_t *EndPtr;
 
   switch (message)
   {
@@ -475,7 +475,7 @@ BOOL CALLBACK SimpleDlg::run_dlgProc (UINT message, WPARAM wParam, LPARAM lParam
         {
           if (HIWORD (wParam) == BN_CLICKED)
           {
-            TCHAR *Path = 0;
+            wchar_t *Path = 0;
             if (GetSelectedLib () == 0)
               GetDefaultAspellPath (Path);
             else
@@ -506,7 +506,7 @@ BOOL CALLBACK SimpleDlg::run_dlgProc (UINT message, WPARAM wParam, LPARAM lParam
           ZeroMemory(&ofn, sizeof(ofn));
           ofn.lStructSize = sizeof(ofn);
           ofn.hwndOwner = _hSelf;
-          TCHAR *Buf = new TCHAR [Edit_GetTextLength (HLibPath) + 1];
+          wchar_t *Buf = new wchar_t [Edit_GetTextLength (HLibPath) + 1];
           Edit_GetText (HLibPath, Buf, DEFAULT_BUF_SIZE);
           ofn.lpstrFile = Buf;
           // Set lpstrFile[0] to '\0' so that GetOpenFileName does not
@@ -526,7 +526,7 @@ BOOL CALLBACK SimpleDlg::run_dlgProc (UINT message, WPARAM wParam, LPARAM lParam
         {
           // Thanks to http://vcfaq.mvps.org/sdk/20.htm
           BROWSEINFO bi = { 0 };
-          TCHAR path[MAX_PATH];
+          wchar_t path[MAX_PATH];
 
           LPITEMIDLIST pidlRoot = NULL;
           SHGetFolderLocation (_hSelf, 0, NULL, NULL, &pidlRoot);
@@ -536,10 +536,10 @@ BOOL CALLBACK SimpleDlg::run_dlgProc (UINT message, WPARAM wParam, LPARAM lParam
           bi.pszDisplayName = path;
           bi.ulFlags = BIF_RETURNONLYFSDIRS;
           bi.lpfn = BrowseCallbackProc;
-          TCHAR *Buf = new TCHAR [Edit_GetTextLength (HLibPath) + 1];
+          wchar_t *Buf = new wchar_t [Edit_GetTextLength (HLibPath) + 1];
           Edit_GetText (HLibPath, Buf, DEFAULT_BUF_SIZE);
-          TCHAR NppPath[MAX_PATH];
-          TCHAR FinalPath[MAX_PATH];
+          wchar_t NppPath[MAX_PATH];
+          wchar_t FinalPath[MAX_PATH];
           SendMsgToNpp (&NppDataInstance, NPPM_GETNPPDIRECTORY, MAX_PATH, (LPARAM) NppPath);
           PathCombine (FinalPath, NppPath, Buf);
           bi.lParam         = (LPARAM) FinalPath;
@@ -547,7 +547,7 @@ BOOL CALLBACK SimpleDlg::run_dlgProc (UINT message, WPARAM wParam, LPARAM lParam
           if ( pidl != 0 )
           {
             // get the name of the folder
-            TCHAR *szPath = new TCHAR[MAX_PATH];
+            wchar_t *szPath = new wchar_t[MAX_PATH];
             SHGetPathFromIDList (pidl, szPath);
             Edit_SetText (HLibPath, szPath);
             CoTaskMemFree(pidl);
@@ -622,7 +622,7 @@ void AdvancedDlg::SetRecheckPreventionType (int Value)
 
 void AdvancedDlg::FillDelimiters (SpellChecker *SpellCheckerInstance, BOOL FillWithDefault)
 {
-  TCHAR *TBuf = 0;
+  wchar_t *TBuf = 0;
 
   switch (ComboBox_GetCurSel (HDelimiterStyle))
     {
@@ -675,12 +675,12 @@ void AdvancedDlg::SetSuggBoxSettings (int Size, int Trans)
 
 void AdvancedDlg::SetBufferSize (int Size)
 {
-  TCHAR Buf[DEFAULT_BUF_SIZE];
+  wchar_t Buf[DEFAULT_BUF_SIZE];
   _itot_s (Size, Buf, 10);
   Edit_SetText (HBufferSize, Buf);
 }
 
-const TCHAR *const IndicNames[] = {_T ("Plain"), _T ("Squiggle"), _T ("TT"), _T ("Diagonal"), _T ("Strike"), _T ("Hidden"),
+const wchar_t *const IndicNames[] = {_T ("Plain"), _T ("Squiggle"), _T ("TT"), _T ("Diagonal"), _T ("Strike"), _T ("Hidden"),
                                    _T ("Box"), _T ("Round Box"), _T ("Straight Box"), _T ("Dash"),
                                    _T ("Dots"), _T ("Squiggle Low")
                                   };
@@ -692,8 +692,8 @@ void AdvancedDlg::RenewRecheckDelayDisability ()
 
 BOOL CALLBACK AdvancedDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-  TCHAR *EndPtr = 0;
-  TCHAR Buf[DEFAULT_BUF_SIZE];
+  wchar_t *EndPtr = 0;
+  wchar_t Buf[DEFAULT_BUF_SIZE];
   int x;
   switch (message)
   {
@@ -868,16 +868,16 @@ BOOL CALLBACK AdvancedDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 
 void AdvancedDlg::SetRecheckDelay (int Delay)
 {
-  TCHAR Buf[DEFAULT_BUF_SIZE];
+  wchar_t Buf[DEFAULT_BUF_SIZE];
   _itot (Delay, Buf, 10);
   Edit_SetText (HRecheckDelay, Buf);
 }
 
 int AdvancedDlg::GetRecheckDelay ()
 {
-  TCHAR Buf[DEFAULT_BUF_SIZE];
+  wchar_t Buf[DEFAULT_BUF_SIZE];
   Edit_GetText (HRecheckDelay, Buf, DEFAULT_BUF_SIZE);
-  TCHAR *EndPtr;
+  wchar_t *EndPtr;
   int x = _tcstol (Buf, &EndPtr, 10);
   return x;
 }
@@ -885,7 +885,7 @@ int AdvancedDlg::GetRecheckDelay ()
 // Called from main thread, beware!
 void AdvancedDlg::ApplySettings (SpellChecker *SpellCheckerInstance)
 {
-  TCHAR *TBuf = 0;
+  wchar_t *TBuf = 0;
   SpellCheckerInstance->SetConversionOptions (Button_GetCheck (HIgnoreYo) == BST_CHECKED ? TRUE : FALSE,
                                               Button_GetCheck (HConvertSingleQuotes) == BST_CHECKED ? TRUE : FALSE,
                                               Button_GetCheck (HRemoveBoundaryApostrophes) == BST_CHECKED ? TRUE : FALSE
@@ -903,15 +903,15 @@ void AdvancedDlg::ApplySettings (SpellChecker *SpellCheckerInstance)
   SpellCheckerInstance->SetSuggBoxSettings (SendMessage (HSliderSize, TBM_GETPOS, 0, 0),
                                             SendMessage (HSliderTransparency, TBM_GETPOS, 0, 0));
   int Len = Edit_GetTextLength (HBufferSize) + 1;
-  TBuf = new TCHAR [Len];
+  TBuf = new wchar_t [Len];
   Edit_GetText (HBufferSize, TBuf, Len);
-  TCHAR *EndPtr;
+  wchar_t *EndPtr;
   int x = _tcstol (TBuf, &EndPtr, 10);
   SpellCheckerInstance->SetBufferSize (x);
   GetDownloadDics ()->UpdateListBox ();
   int Length = Edit_GetTextLength (HEditDelimiters);
   CLEAN_AND_ZERO_ARR (TBuf);
-  TBuf = new TCHAR[Length + 1];
+  TBuf = new wchar_t[Length + 1];
   Edit_GetText (HEditDelimiters, TBuf, Length + 1);
   char *BufUtf8 = 0;
   SetStringDUtf8 (BufUtf8, TBuf);

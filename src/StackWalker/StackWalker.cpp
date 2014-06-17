@@ -221,7 +221,7 @@ public:
       return FALSE;
     // Dynamically load the Entry-Points for dbghelp.dll:
     // First try to load the newsest one from
-    TCHAR szTemp[4096];
+    wchar_t szTemp[4096];
     // But before wqe do this, we first check if the ".local" file exists
     if (GetModuleFileName(NULL, szTemp, 4096) > 0)
     {
@@ -456,7 +456,7 @@ private:
     typedef BOOL (__stdcall *tM32N)(HANDLE hSnapshot, LPMODULEENTRY32 lpme);
 
     // try both dlls...
-    const TCHAR *dllname[] = { _T("kernel32.dll"), _T("tlhelp32.dll") };
+    const wchar_t *dllname[] = { _T("kernel32.dll"), _T("tlhelp32.dll") };
     HINSTANCE hToolhelp = NULL;
     tCT32S pCT32S = NULL;
     tM32F pM32F = NULL;
@@ -626,7 +626,7 @@ private:
             if (GetFileVersionInfoA(szImg, dwHandle, dwSize, vData) != 0)
             {
               UINT len;
-              TCHAR szSubBlock[] = _T("\\");
+              wchar_t szSubBlock[] = _T("\\");
               if (VerQueryValue(vData, szSubBlock, (LPVOID*) &fInfo, &len) == 0)
                 fInfo = NULL;
               else

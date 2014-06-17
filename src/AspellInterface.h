@@ -29,15 +29,15 @@ class AspellInterface : public AbstractSpellerInterface
 public:
   AspellInterface (HWND NppWindowArg); // Window for error reporting
   ~AspellInterface ();
-  __override virtual std::vector<TCHAR*> *GetLanguageList ();
-  __override virtual void SetLanguage (TCHAR *Lang);
-  __override virtual void SetMultipleLanguages (std::vector<TCHAR *> *List); // Languages are from LangList
+  __override virtual std::vector<wchar_t*> *GetLanguageList ();
+  __override virtual void SetLanguage (wchar_t *Lang);
+  __override virtual void SetMultipleLanguages (std::vector<wchar_t *> *List); // Languages are from LangList
   __override virtual BOOL SpellerCheckWord (char *Word); // Word in Utf-8 or ANSI (For now only Utf-8)
   __override virtual BOOL IsWorking ();
   __override virtual std::vector<wchar_t *> *GetSuggestions (char *Word);
   __override virtual void AddToDictionary (char *Word, int DictionaryNum = -1);
 
-  BOOL Init (TCHAR *PathArg);
+  BOOL Init (wchar_t *PathArg);
 private:
   void SendAspellErorr (AspellCanHaveError *Error);
 public:

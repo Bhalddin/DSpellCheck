@@ -28,9 +28,9 @@ public:
   AbstractSpellerInterface ();
   ~AbstractSpellerInterface ();
 
-  virtual std::vector<TCHAR*> *GetLanguageList () = 0;
-  virtual void SetLanguage (TCHAR *Lang) = 0;
-  virtual void SetMultipleLanguages (std::vector<TCHAR *> *List) = 0; // Languages are from LangList
+  virtual std::vector<wchar_t*> *GetLanguageList () = 0;
+  virtual void SetLanguage (wchar_t *Lang) = 0;
+  virtual void SetMultipleLanguages (std::vector<wchar_t *> *List) = 0; // Languages are from LangList
   void SetMode (int Multi) { MultiMode = Multi; }                         // Multi - 1, Single - 0
   void SetEncoding (EncodingType Encoding) {CurrentEncoding = Encoding; }
   BOOL CheckWord (char *Word);                         // Word in Utf-8 or ANSI

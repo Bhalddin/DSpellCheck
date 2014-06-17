@@ -40,13 +40,13 @@ struct DicInfo
   iconv_t BackConverterANSI;
   iconv_t ConverterWCHAR;
   iconv_t BackConverterWCHAR;
-  TCHAR *LocalDicPath;
+  wchar_t *LocalDicPath;
   WordSet *LocalDic; // Stored in Dictionary encoding
 };
 
 struct AvailableLangInfo
 {
-  TCHAR *Name;
+  wchar_t *Name;
   int Type; // Type = 1 - System Dir Dictionary, 0 - Nomal Dictionary
 
   bool operator < (const AvailableLangInfo &rhs ) const
@@ -60,22 +60,22 @@ class HunspellInterface : public AbstractSpellerInterface
 public:
   HunspellInterface (HWND NppWindowArg);
   ~HunspellInterface ();
-  __override virtual std::vector<TCHAR*> *GetLanguageList ();
-  __override virtual void SetLanguage (TCHAR *Lang);
-  __override virtual void SetMultipleLanguages (std::vector<TCHAR *> *List); // Languages are from LangList
+  __override virtual std::vector<wchar_t*> *GetLanguageList ();
+  __override virtual void SetLanguage (wchar_t *Lang);
+  __override virtual void SetMultipleLanguages (std::vector<wchar_t *> *List); // Languages are from LangList
   __override virtual BOOL SpellerCheckWord (char *Word); // Word in Utf-8 or ANSI
   __override virtual BOOL IsWorking ();
   __override virtual std::vector<wchar_t *> *GetSuggestions (char *Word);
   __override virtual void AddToDictionary (char *Word, int DictionaryNum = -1);
 
-  void SetDirectory (TCHAR *Dir);
-  void SetAdditionalDirectory (TCHAR *Dir);
-  void WriteUserDic (WordSet *Target, TCHAR *Path);
-  void ReadUserDic (WordSet *Target, TCHAR *Path);
-  void UpdateOnDicRemoval (TCHAR *Path, BOOL &NeedSingleLangReset, BOOL &NeedMultiLangReset);
-  BOOL GetLangOnlySystem (TCHAR *Lang);
+  void SetDirectory (wchar_t *Dir);
+  void SetAdditionalDirectory (wchar_t *Dir);
+  void WriteUserDic (WordSet *Target, wchar_t *Path);
+  void ReadUserDic (WordSet *Target, wchar_t *Path);
+  void UpdateOnDicRemoval (wchar_t *Path, BOOL &NeedSingleLangReset, BOOL &NeedMultiLangReset);
+  BOOL GetLangOnlySystem (wchar_t *Lang);
 private:
-  DicInfo CreateHunspell (TCHAR *Name, int Type);
+  DicInfo CreateHunspell (wchar_t *Name, int Type);
   BOOL ConvertAndCheckWord (DicInfo Dic, char *Word, EncodingType Encoding);
   void MessageBoxWordCannotBeAdded ();
   void FilleVectorFromHunspellWordList (const char ***WordList, int num, std::vector<wchar_t *> *TargetVector);
@@ -83,10 +83,10 @@ public:
 private:
   BOOL IsHunspellWorking;
   BOOL UseOneDic;
-  TCHAR *DicDir;
-  TCHAR *SysDicDir;
+  wchar_t *DicDir;
+  wchar_t *SysDicDir;
   std::set <AvailableLangInfo> *DicList;
-  std::map <TCHAR *, DicInfo, bool (*)(TCHAR *, TCHAR *)> *AllHunspells;
+  std::map <wchar_t *, DicInfo, bool (*)(wchar_t *, wchar_t *)> *AllHunspells;
   char *GetConvertedWord (const char *Source, iconv_t Converter);
   char *GetConvertedWord (const wchar_t *Source, iconv_t Converter);
   DicInfo SingularSpeller;
@@ -95,8 +95,8 @@ private:
   WordSet *Memorized;
   BOOL InitialReadingBeenDone;
   char *TemporaryBuffer;
-  TCHAR *UserDicPath; // For now only default one.
-  TCHAR *SystemWrongDicPath; // Only for reading and then removing
+  wchar_t *UserDicPath; // For now only default one.
+  wchar_t *SystemWrongDicPath; // Only for reading and then removing
   HWND NppWindow;
 };
 #endif // HUNSPELLINTERFACE_H

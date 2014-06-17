@@ -53,7 +53,7 @@ BOOL RegMsg(HWND hWnd, DWORD dwMsgType)
 
   if( !TrackMouseEvent(&tmeEventTrack) )
   {
-    TCHAR szError[64];
+    wchar_t szError[64];
 
     _stprintf (szError, _T ("Can't TrackMouseEvent ! ErrorId: %d"), GetLastError());
     MessageBox(hWnd, szError, _T ("Error"), MB_OK|MB_ICONSTOP);

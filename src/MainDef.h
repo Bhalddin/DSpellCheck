@@ -46,7 +46,7 @@ enum e
 };
 }
 
-const TCHAR *const CustomGUIMesssagesNames[] =
+const wchar_t *const CustomGUIMesssagesNames[] =
 {
   _T ("DSpellCheck_MessageBox"),
   _T ("DSpellCheck_ShowCalculatedMenu"),
@@ -94,11 +94,11 @@ enum e
 struct MessageBoxInfo
 {
   HWND hWnd;
-  TCHAR *Title;
-  TCHAR *Message;
+  wchar_t *Title;
+  wchar_t *Message;
   DWORD Flags;
   DWORD Answer;
-  MessageBoxInfo (HWND hWndArg, TCHAR *MessageArg, TCHAR *TitleArg, DWORD FlagsArg)
+  MessageBoxInfo (HWND hWndArg, wchar_t *MessageArg, wchar_t *TitleArg, DWORD FlagsArg)
   {
     hWnd = hWndArg;
     Title = TitleArg;

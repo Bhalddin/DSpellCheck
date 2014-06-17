@@ -46,29 +46,29 @@ void SelectProxy::init (HINSTANCE hInst, HWND Parent)
 
 void SelectProxy::ApplyChoice (SpellChecker *SpellCheckerInstance)
 {
-  TCHAR *TBuf = 0;
+  wchar_t *TBuf = 0;
   size_t BufSize = 0;
   BufSize = Edit_GetTextLength (HUserName) + 1;
-  TBuf = new TCHAR [BufSize];
+  TBuf = new wchar_t [BufSize];
   Edit_GetText (HUserName, TBuf, BufSize);
   SpellCheckerInstance->SetProxyUserName (TBuf);
   CLEAN_AND_ZERO_ARR (TBuf);
   BufSize = Edit_GetTextLength (HHostName) + 1;
-  TBuf = new TCHAR [BufSize];
+  TBuf = new wchar_t [BufSize];
   Edit_GetText (HHostName, TBuf, BufSize);
   SpellCheckerInstance->SetProxyHostName (TBuf);
   CLEAN_AND_ZERO_ARR (TBuf);
   BufSize = Edit_GetTextLength (HPassword) + 1;
-  TBuf = new TCHAR [BufSize];
+  TBuf = new wchar_t [BufSize];
   Edit_GetText (HPassword, TBuf, BufSize);
   SpellCheckerInstance->SetProxyPassword (TBuf);
   CLEAN_AND_ZERO_ARR (TBuf);
   SpellCheckerInstance->SetUseProxy (Button_GetCheck (HUseProxy));
   SpellCheckerInstance->SetProxyAnonymous (Button_GetCheck (HProxyAnonymous));
   SpellCheckerInstance->SetProxyType (ComboBox_GetCurSel (HProxyType));
-  TBuf = new TCHAR[DEFAULT_BUF_SIZE];
+  TBuf = new wchar_t[DEFAULT_BUF_SIZE];
   Edit_GetText (HPort, TBuf, DEFAULT_BUF_SIZE);
-  TCHAR *EndPtr;
+  wchar_t *EndPtr;
   int x = _tcstol (TBuf, &EndPtr, 10);
   SpellCheckerInstance->SetProxyPort (x);
   CLEAN_AND_ZERO_ARR (TBuf);
@@ -99,7 +99,7 @@ void SelectProxy::DisableControls ()
   }
 }
 
-void SelectProxy::SetOptions (BOOL UseProxy, TCHAR *HostName, TCHAR *UserName, TCHAR *Password, int Port, BOOL ProxyAnonymous, int ProxyType)
+void SelectProxy::SetOptions (BOOL UseProxy, wchar_t *HostName, wchar_t *UserName, wchar_t *Password, int Port, BOOL ProxyAnonymous, int ProxyType)
 {
   Button_SetCheck (HUseProxy, UseProxy ? BST_CHECKED : BST_UNCHECKED);
   Button_SetCheck (HProxyAnonymous, ProxyAnonymous ? BST_CHECKED : BST_UNCHECKED);
@@ -110,7 +110,7 @@ void SelectProxy::SetOptions (BOOL UseProxy, TCHAR *HostName, TCHAR *UserName, T
     Port = 0;
   if (Port > 65535)
     Port = 65535;
-  TCHAR Buf[DEFAULT_BUF_SIZE];
+  wchar_t Buf[DEFAULT_BUF_SIZE];
   _itot (Port, Buf, 10);
   Edit_SetText (HPort, Buf);
   DisableControls ();
@@ -168,9 +168,9 @@ BOOL CALLBACK SelectProxy::run_dlgProc (UINT message, WPARAM wParam, LPARAM lPar
       case IDC_PORT:
         if (HIWORD (wParam) == EN_CHANGE)
         {
-          TCHAR *EndPtr = 0;
+          wchar_t *EndPtr = 0;
           int x;
-          TCHAR Buf[DEFAULT_BUF_SIZE];
+          wchar_t Buf[DEFAULT_BUF_SIZE];
           Edit_GetText (HPort, Buf, DEFAULT_BUF_SIZE);
           if (!*Buf)
             return FALSE;

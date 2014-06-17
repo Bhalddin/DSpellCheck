@@ -73,12 +73,12 @@ void Progress::SetProgress (int value)
   SendMessage (HProgressBar, PBM_SETPOS, value, 0);
 }
 
-void Progress::SetBottomMessage (TCHAR *Message)
+void Progress::SetBottomMessage (wchar_t *Message)
 {
   Static_SetText (HDescBottom, Message);
 }
 
-void Progress::SetTopMessage (TCHAR *Message)
+void Progress::SetTopMessage (wchar_t *Message)
 {
   Static_SetText (HDescTop, Message);
 }

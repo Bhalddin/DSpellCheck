@@ -241,10 +241,10 @@ void SetStringToFirstUtf8Char (char *&Dest, const char *Source)
 }
 
 // This function is more or less transferred from gcc source
-BOOL MatchSpecialChar (TCHAR *Dest, TCHAR *&Source)
+BOOL MatchSpecialChar (wchar_t *Dest, wchar_t *&Source)
 {
   int len, i;
-  TCHAR c, n;
+  wchar_t c, n;
   BOOL m;
 
   m = TRUE;
@@ -299,7 +299,7 @@ BOOL MatchSpecialChar (TCHAR *Dest, TCHAR *&Source)
 
       buf[0] = (unsigned char) c;
       n = n << 4;
-      n += (TCHAR) strtol (buf, NULL, 16);
+      n += (wchar_t) strtol (buf, NULL, 16);
     }
     *Dest = n;
     break;
@@ -312,11 +312,11 @@ BOOL MatchSpecialChar (TCHAR *Dest, TCHAR *&Source)
   return m;
 }
 
-void SetParsedString (TCHAR *&Dest, TCHAR *Source)
+void SetParsedString (wchar_t *&Dest, wchar_t *Source)
 {
-  Dest = new TCHAR [_tcslen (Source) + 1];
-  TCHAR *LastPos = 0;
-  TCHAR *ResString = Dest;
+  Dest = new wchar_t [_tcslen (Source) + 1];
+  wchar_t *LastPos = 0;
+  wchar_t *ResString = Dest;
   while (*Source)
   {
     LastPos = Source;
@@ -540,7 +540,7 @@ size_t Utf8Length (const char *String)
   return Size;
 }
 
-bool SortCompare(TCHAR *a, TCHAR *b)
+bool SortCompare(wchar_t *a, wchar_t *b)
 {
   return _tcscmp (a, b) < 0;
 }
@@ -560,12 +560,12 @@ size_t HashCharString (char *a)
   return Hash;
 }
 
-bool EquivTCHARStrings (TCHAR *a, TCHAR *b)
+bool Equivwchar_tStrings (wchar_t *a, wchar_t *b)
 {
   return (_tcscmp (a, b) == 0);
 }
 
-size_t HashTCHARString (TCHAR *a)
+size_t Hashwchar_tString (wchar_t *a)
 {
   size_t Hash = 7;
   for(unsigned int i = 0; i < _tcslen (a); i++)
@@ -585,7 +585,7 @@ bool SortCompareWChars (wchar_t *a, wchar_t *b)
   return wcscmp (a, b) < 0;
 }
 
-const TCHAR *const AliasesFrom[] = {_T ("af_Za"), _T ("ak_GH"), _T ("bg_BG"), _T ("ca_ANY"), _T ("ca_ES"), _T ("cop_EG"), _T ("cs_CZ"), _T ("cy_GB"), _T ("da_DK"), _T ("de_AT"), _T ("de_CH"), _T ("de_DE"),
+const wchar_t *const AliasesFrom[] = {_T ("af_Za"), _T ("ak_GH"), _T ("bg_BG"), _T ("ca_ANY"), _T ("ca_ES"), _T ("cop_EG"), _T ("cs_CZ"), _T ("cy_GB"), _T ("da_DK"), _T ("de_AT"), _T ("de_CH"), _T ("de_DE"),
   _T ("de_DE_comb"), _T ("de_DE_frami"), _T ("de_DE_neu"), _T ("el_GR"), _T ("en_AU"), _T ("en_CA"), _T ("en_GB"), _T ("en_GB-oed"), _T ("en_NZ"), _T ("en_US"), _T ("en_ZA"), _T ("eo_EO"), _T ("es_AR"),
   _T ("es_BO"), _T ("es_CL"), _T ("es_CO"), _T ("es_CR"), _T ("es_CU"), _T ("es_DO"), _T ("es_EC"), _T ("es_ES"), _T ("es_GT"), _T ("es_HN"), _T ("es_MX"), _T ("es_NEW"), _T ("es_NI"), _T ("es_PA"), _T ("es_PE"),
   _T ("es_PR"), _T ("es_PY"), _T ("es_SV"), _T ("es_UY"), _T ("es_VE"), _T ("et_EE"),  _T ("fo_FO"), _T ("fr_FR"), _T ("fr_FR-1990"), _T ("fr_FR-1990_1-3-2"), _T ("fr_FR-classique"), _T ("fr_FR-classique_1-3-2"), _T ("fr_FR_1-3-2"), _T ("fy_NL"),
@@ -594,7 +594,7 @@ const TCHAR *const AliasesFrom[] = {_T ("af_Za"), _T ("ak_GH"), _T ("bg_BG"), _T
   _T ("ns_ZA"), _T ("ny_MW"), _T ("oc_FR"), _T ("pl_PL"), _T ("pt_BR"), _T ("pt_PT"), _T ("ro_RO"), _T ("ru_RU"), _T ("ru_RU_ie"), _T ("ru_RU_ye"), _T ("ru_RU_yo"), _T ("rw_RW"), _T ("si_SI"), _T ("sk_SK"), _T ("sq_AL"),
   _T ("ss_ZA"), _T ("st_ZA"), _T ("sv_SE"), _T ("sw_KE"),  _T ("tet_ID"), _T ("th_TH"), _T ("tl_PH"), _T ("tn_ZA"), _T ("ts_ZA"), _T ("uk_UA"), _T ("ur_PK"), _T ("ve_ZA"), _T ("vi-VN"), _T ("xh_ZA"), _T ("zu_ZA")
 };
-const TCHAR *const AliasesTo[] = {_T ("Afrikaans"), _T ("Akan"), _T ("Bulgarian"), _T ("Catalan (Any)"), _T ("Catalan (Spain)"), _T ("Coptic (Bohairic dialect)"), _T ("Czech"), _T ("Welsh"),
+const wchar_t *const AliasesTo[] = {_T ("Afrikaans"), _T ("Akan"), _T ("Bulgarian"), _T ("Catalan (Any)"), _T ("Catalan (Spain)"), _T ("Coptic (Bohairic dialect)"), _T ("Czech"), _T ("Welsh"),
   _T ("Danish"), _T ("German (Austria)"), _T ("German (Switzerland)"), _T ("German (Germany)"), _T ("German (Old and New Spelling)"), _T ("German (Additional)"), _T ("German (New Spelling)"),
   _T ("Greek"), _T ("English (Australia)"), _T ("English (Canada)"), _T ("English (Great Britain)"), _T ("English (Great Britain) [OED]"), _T ("English (New Zealand)"),
   _T ("English (United States)"), _T ("English (South Africa)"), _T ("Esperanto"), _T ("Spanish (Argentina)"), _T ("Spanish (Bolivia)"), _T ("Spanish (Chile)"), _T ("Spanish (Colombia)"), _T ("Spanish (Costa Rica)"),
@@ -609,7 +609,7 @@ const TCHAR *const AliasesTo[] = {_T ("Afrikaans"), _T ("Akan"), _T ("Bulgarian"
 };
 
 // Language Aliases
-BOOL SetStringWithAliasApplied (TCHAR *&Target, TCHAR *OrigName)
+BOOL SetStringWithAliasApplied (wchar_t *&Target, wchar_t *OrigName)
 {
   int Left, Right;
   Left = 0;
@@ -644,7 +644,7 @@ BOOL SetStringWithAliasApplied (TCHAR *&Target, TCHAR *OrigName)
   return FALSE;
 }
 
-static BOOL TryToCreateDir (TCHAR *Path, BOOL Silent, HWND NppWindow)
+static BOOL TryToCreateDir (wchar_t *Path, BOOL Silent, HWND NppWindow)
 {
   if (!CreateDirectory (Path, NULL))
   {
@@ -653,7 +653,7 @@ static BOOL TryToCreateDir (TCHAR *Path, BOOL Silent, HWND NppWindow)
       if (!NppWindow)
         return FALSE;
 
-      TCHAR Message[DEFAULT_BUF_SIZE];
+      wchar_t Message[DEFAULT_BUF_SIZE];
       _stprintf (Message, _T ("Can't create directory %s"), Path);
       MessageBoxInfo MsgBox (NppWindow, Message, _T ("Error in directory creation"), MB_OK | MB_ICONERROR);
       SendMessage (NppWindow, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);
@@ -663,7 +663,7 @@ static BOOL TryToCreateDir (TCHAR *Path, BOOL Silent, HWND NppWindow)
   return TRUE;
 }
 
-BOOL CheckForDirectoryExistence (TCHAR *Path, BOOL Silent, HWND NppWindow)
+BOOL CheckForDirectoryExistence (wchar_t *Path, BOOL Silent, HWND NppWindow)
 {
   for (unsigned int i = 0; i < _tcslen (Path); i++)
   {
@@ -1035,7 +1035,7 @@ void StripEqualElements (std::vector <wchar_t *> *&Vector)
   Vector = NewVector;
 }
 
-TCHAR *GetLastSlashPosition (TCHAR *Path)
+wchar_t *GetLastSlashPosition (wchar_t *Path)
 {
   return _tcsrchr (Path, _T ('\\'));
 }

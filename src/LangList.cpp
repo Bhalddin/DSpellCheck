@@ -52,8 +52,8 @@ HWND LangList::GetListBox ()
 void LangList::ApplyChoice (SpellChecker *SpellCheckerInstance)
 {
   int count = ListBox_GetCount (HLangList);
-  TCHAR Buf[DEFAULT_BUF_SIZE];
-  TCHAR *ItemBuf = 0;
+  wchar_t Buf[DEFAULT_BUF_SIZE];
+  wchar_t *ItemBuf = 0;
   char *ConvertedBuf = 0;
   BOOL FirstOne = TRUE;
   Buf[0] = _T ('\0');

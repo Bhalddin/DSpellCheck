@@ -40,7 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "StackWalker/StackWalker.h"
 
-const TCHAR configFileName[] = _T ("DSpellCheck.ini");
+const wchar_t configFileName[] = _T ("DSpellCheck.ini");
 
 #ifdef UNICODE
 #define generic_itoa _itow
@@ -61,7 +61,7 @@ FuncItem *get_funcItem ()
 // The data of Notepad++ that you can use in your plugin commands
 //
 NppData nppData;
-TCHAR IniFilePath[MAX_PATH];
+wchar_t IniFilePath[MAX_PATH];
 DWORD CustomGUIMessageIds [CustomGUIMessage::MAX] = {0};
 bool doCloseTag = false;
 BOOL AutoCheckText = false;
@@ -168,11 +168,11 @@ return CallNextHookEx(HCmHook, nCode, wParam, lParam);
 }
 */
 
-void GetDefaultHunspellPath_ (TCHAR *&Path)
+void GetDefaultHunspellPath_ (wchar_t *&Path)
 {
-  Path = new TCHAR[MAX_PATH];
+  Path = new wchar_t[MAX_PATH];
   _tcscpy (Path, IniFilePath);
-  TCHAR *Pointer = _tcsrchr (Path, _T ('\\'));
+  wchar_t *Pointer = _tcsrchr (Path, _T ('\\'));
   *Pointer = 0;
   _tcscat (Path, _T ("\\Hunspell"));
 }
@@ -523,8 +523,8 @@ void commandMenuInit()
   // make your plugin config file full file path name
   PathAppend (IniFilePath, configFileName);
 
-  TCHAR Buf[DEFAULT_BUF_SIZE];
-  TCHAR *EndPtr;
+  wchar_t Buf[DEFAULT_BUF_SIZE];
+  wchar_t *EndPtr;
   int x;
   GetPrivateProfileString (_T ("SpellCheck"), _T ("Recheck_Delay"), _T ("500"), Buf, DEFAULT_BUF_SIZE, IniFilePath);
   x = _tcstol (Buf, &EndPtr, 10);
@@ -538,7 +538,7 @@ void commandMenuInit()
   //--------------------------------------------//
   // with function :
   // setCommand(int index,                      // zero based number to indicate the order of command
-  //            TCHAR *commandName,             // the command name that you want to see in plugin menu
+  //            wchar_t *commandName,             // the command name that you want to see in plugin menu
   //            PFUNCPLUGINCMD functionPointer, // the symbol of function (function pointer) associated with this command. The body should be defined below. See Step 4.
   //            ShortcutKey *shortcut,          // optional. Define a shortcut to trigger this command
   //            bool check0nInit                // optional. Make this menu item be checked visually
@@ -593,11 +593,11 @@ HMENU GetDSpellCheckMenu ()
   HMENU DSpellCheckMenu = 0;
   int Count = GetMenuItemCount (PluginsMenu);
   int StrLen = 0;
-  TCHAR *Buf = 0;
+  wchar_t *Buf = 0;
   for (int i = 0; i < Count; i++)
   {
     StrLen = GetMenuString (PluginsMenu, i, 0, 0, MF_BYPOSITION);
-    Buf = new TCHAR[StrLen + 1];
+    Buf = new wchar_t[StrLen + 1];
     GetMenuString (PluginsMenu, i, Buf, StrLen + 1, MF_BYPOSITION);
     if (_tcscmp (Buf, NPP_PLUGIN_NAME) == 0)
     {
@@ -695,7 +695,7 @@ BOOL GetAutoCheckText ()
 //
 // Function that initializes plug-in commands
 //
-bool setCommand(size_t index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc, ShortcutKey *sk, bool check0nInit)
+bool setCommand(size_t index, wchar_t *cmdName, PFUNCPLUGINCMD pFunc, ShortcutKey *sk, bool check0nInit)
 {
   if (index >= nbFunc)
     return false;

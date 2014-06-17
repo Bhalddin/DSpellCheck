@@ -41,9 +41,9 @@ void SetStringSUtf8Safe (wchar_t *&Target, const char *Str, size_t *&Indexation,
 void SetStringDUtf8 (char *&Target, const char *Str);
 void SetStringDUtf8 (char *&Target, const wchar_t *Str);
 
-BOOL SetStringWithAliasApplied (TCHAR *&Target, TCHAR *OrigName);
+BOOL SetStringWithAliasApplied (wchar_t *&Target, wchar_t *OrigName);
 
-void SetParsedString (TCHAR *&Dest, TCHAR *Source);
+void SetParsedString (wchar_t *&Dest, wchar_t *Source);
 HWND GetScintillaWindow(const NppData *NppDataArg);
 LRESULT SendMsgToEditor(const NppData *NppDataArg, UINT Msg, WPARAM wParam = 0, LPARAM lParam = 0);
 LRESULT SendMsgToEditor(HWND ScintillaWindow, const NppData *NppDataArg, UINT Msg, WPARAM wParam = 0, LPARAM lParam = 0);
@@ -63,15 +63,15 @@ size_t Utf8Length (const char *String);
 BOOL Utf8IsLead (char c);
 BOOL Utf8IsCont (char c);
 
-bool SortCompare (TCHAR *a, TCHAR *b);
-bool EquivTCHARStrings (TCHAR *a, TCHAR *b);
-size_t HashTCHARString (TCHAR *a);
+bool SortCompare (wchar_t *a, wchar_t *b);
+bool Equivwchar_tStrings (wchar_t *a, wchar_t *b);
+size_t Hashwchar_tString (wchar_t *a);
 bool EquivCharStrings (char *a, char *b);
 size_t HashCharString (char *a);
 bool SortCompareChars (char *a, char *b);
 
-BOOL CheckForDirectoryExistence (TCHAR *Path, BOOL Silent = TRUE, HWND NppWindow = 0);
-TCHAR *GetLastSlashPosition (TCHAR *Path);
+BOOL CheckForDirectoryExistence (wchar_t *Path, BOOL Silent = TRUE, HWND NppWindow = 0);
+wchar_t *GetLastSlashPosition (wchar_t *Path);
 void SortStringVectorByLevenshteinDistanceUtf8 (std::vector <char *> *Vector, char *Word);
 void SortStringVectorByDamerauLevenshteinDistanceUtf8 (std::vector <char *> *Vector, char *Word);
 void SortStringVectorByDamerauLevenshteinDistanceWchar (std::vector <wchar_t *> *Vector, wchar_t *Word);

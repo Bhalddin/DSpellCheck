@@ -66,7 +66,7 @@ void RemoveDics::RemoveSelected (SpellChecker *SpellCheckerInstance)
   {
     if (CheckedListBox_GetCheckState (HLangList, i) == BST_CHECKED)
     {
-      TCHAR FileName[MAX_PATH];
+      wchar_t FileName[MAX_PATH];
       for (int j = 0; j < 1 + SpellCheckerInstance->GetRemoveSystem () ? 1 : 0; j++)
       {
         *FileName = _T ('\0');
@@ -108,7 +108,7 @@ void RemoveDics::RemoveSelected (SpellChecker *SpellCheckerInstance)
     if (NeedSingleReset)
     SpellCheckerInstance->
     */
-    TCHAR Buf[DEFAULT_BUF_SIZE];
+    wchar_t Buf[DEFAULT_BUF_SIZE];
     _stprintf (Buf, _T ("%d dictionary(ies) has(ve) been successfully removed"), Count);
     MessageBoxInfo MsgBox (_hParent, Buf, _T ("Dictionaries were removed"), MB_OK | MB_ICONINFORMATION);
     SendMessage (_hParent, GetCustomGUIMessageId (CustomGUIMessage::DO_MESSAGE_BOX),  (WPARAM) &MsgBox, 0);

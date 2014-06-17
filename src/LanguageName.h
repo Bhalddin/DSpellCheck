@@ -23,10 +23,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 struct LanguageName
 {
-  TCHAR *OrigName;
-  TCHAR *AliasName;
+  wchar_t *OrigName;
+  wchar_t *AliasName;
   BOOL AliasApplied;
-  LanguageName (TCHAR *Name, BOOL UseAlias = TRUE)
+  LanguageName (wchar_t *Name, BOOL UseAlias = TRUE)
   {
     OrigName = 0;
     AliasName = 0;

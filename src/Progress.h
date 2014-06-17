@@ -33,8 +33,8 @@ public:
   void DoDialog ();
   void SetProgress ();
   void SetProgress (int value);
-  void SetBottomMessage (TCHAR *Message);
-  void SetTopMessage (TCHAR *Message);
+  void SetBottomMessage (wchar_t *Message);
+  void SetTopMessage (wchar_t *Message);
 private:
   HWND HDescBottom;
   HWND HDescTop;

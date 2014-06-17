@@ -39,7 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "SelectProxy.h"
 #include "Suggestions.h"
 
-SpellChecker::SpellChecker (const TCHAR *IniFilePathArg, SettingsDlg *SettingsDlgInstanceArg, NppData *NppDataInstanceArg,
+SpellChecker::SpellChecker (const wchar_t *IniFilePathArg, SettingsDlg *SettingsDlgInstanceArg, NppData *NppDataInstanceArg,
                             Suggestions *SuggestionsInstanceArg, LangList *LangListInstanceArg)
 {
   CurrentPosition = 0;
@@ -103,7 +103,7 @@ SpellChecker::SpellChecker (const TCHAR *IniFilePathArg, SettingsDlg *SettingsDl
   UseProxy = FALSE;
   WordNearCursorProtection = FALSE;
   MultiLangList = 0;
-  SettingsToSave = new std::map<TCHAR *, DWORD, bool ( *)(TCHAR *, TCHAR *)> (SortCompare);
+  SettingsToSave = new std::map<wchar_t *, DWORD, bool ( *)(wchar_t *, wchar_t *)> (SortCompare);
   if (SendMsgToNpp (NppDataInstance, NPPM_ALLOCATESUPPORTED, 0, 0))
   {
     SetUseAllocatedIds (TRUE);
@@ -197,7 +197,7 @@ SpellChecker::~SpellChecker ()
   for (int i = 0; i < countof (DefaultServers); i++)
     CLEAN_AND_ZERO_ARR (DefaultServers[i]);
 
-  std::map<TCHAR *, DWORD, bool ( *)(TCHAR *, TCHAR *)>::iterator it = SettingsToSave->begin ();
+  std::map<wchar_t *, DWORD, bool ( *)(wchar_t *, wchar_t *)>::iterator it = SettingsToSave->begin ();
   for (; it != SettingsToSave->end (); ++it)
   {
     delete ((*it).first);
@@ -207,7 +207,7 @@ SpellChecker::~SpellChecker ()
   CLEAN_AND_ZERO (CurrentLangs);
 }
 
-void InsertSuggMenuItem (HMENU Menu, TCHAR *Text, BYTE Id, int InsertPos, HMENU &HMenuTempStore, MenuFlagEnum::e Flag)
+void InsertSuggMenuItem (HMENU Menu, wchar_t *Text, BYTE Id, int InsertPos, HMENU &HMenuTempStore, MenuFlagEnum::e Flag)
 {
   MENUITEMINFO mi;
   memset(&mi, 0, sizeof(mi));
@@ -285,11 +285,11 @@ BOOL WINAPI SpellChecker::NotifyMessage (UINT Msg, WPARAM wParam, LPARAM lParam)
     break;
   case TM_ADD_USER_SERVER:
     {
-      TCHAR *Name = (TCHAR *) wParam;
-      TCHAR *TrimmedName = 0;
+      wchar_t *Name = (wchar_t *) wParam;
+      wchar_t *TrimmedName = 0;
       SetString (TrimmedName, Name);
       FtpTrim (TrimmedName);
-      TCHAR *Buf = 0;
+      wchar_t *Buf = 0;
       for (int i = 0; i < countof (DefaultServers); i++)
       {
         SetString (Buf, DefaultServers[i]);
@@ -357,7 +357,7 @@ BOOL SpellChecker::GetDecodeNames ()
   return DecodeNames;
 }
 
-TCHAR *SpellChecker::GetLangByIndex (int i)
+wchar_t *SpellChecker::GetLangByIndex (int i)
 {
   return CurrentLangs->at(i).OrigName;
 }
@@ -366,7 +366,7 @@ void SpellChecker::ReinitLanguageLists ()
 {
   int SpellerId = LibMode;
   BOOL CurrentLangExists = FALSE;
-  TCHAR *CurrentLang;
+  wchar_t *CurrentLang;
 
   AbstractSpellerInterface *SpellerToUse = (SpellerId == 1 ?
                                             (AbstractSpellerInterface *)HunspellSpeller :
@@ -387,7 +387,7 @@ void SpellChecker::ReinitLanguageLists ()
   if (SpellerToUse->IsWorking ())
   {
     SettingsDlgInstance->GetSimpleDlg ()->DisableLanguageCombo (FALSE);
-    std::vector <TCHAR *> *LangsFromSpeller =  SpellerToUse->GetLanguageList ();
+    std::vector <wchar_t *> *LangsFromSpeller =  SpellerToUse->GetLanguageList ();
     CurrentLangs = new std::vector<LanguageName> ();
 
     if (!LangsFromSpeller || LangsFromSpeller->size () == 0)
@@ -744,7 +744,7 @@ void SpellChecker::DoPluginMenuInclusion (BOOL Invalidate)
   HMENU LangsSubMenu = GetLangsSubMenu (DSpellCheckMenu);
   if (LangsSubMenu)
     DestroyMenu (LangsSubMenu);
-  TCHAR *CurLang = (LibMode == 1) ? HunspellLanguage : AspellLanguage;
+  wchar_t *CurLang = (LibMode == 1) ? HunspellLanguage : AspellLanguage;
   HMENU NewMenu = CreatePopupMenu ();
   if (!Invalidate)
   {
@@ -792,7 +792,7 @@ void SpellChecker::FillDownloadDics ()
 void SpellChecker::ResetDownloadCombobox ()
 {
   HWND TargetCombobox = GetDlgItem (GetDownloadDics ()->getHSelf (), IDC_ADDRESS);
-  TCHAR Buf[DEFAULT_BUF_SIZE];
+  wchar_t Buf[DEFAULT_BUF_SIZE];
   ComboBox_GetText (TargetCombobox, Buf, DEFAULT_BUF_SIZE);
   if (AddressIsSet)
   {
@@ -820,8 +820,8 @@ void SpellChecker::PreserveCurrentAddressIndex ()
   HWND TargetCombobox = GetDlgItem (GetDownloadDics ()->getHSelf (), IDC_ADDRESS);
   if (!TargetCombobox)
     return;
-  TCHAR CurText [DEFAULT_BUF_SIZE];
-  TCHAR *Buf = 0;
+  wchar_t CurText [DEFAULT_BUF_SIZE];
+  wchar_t *Buf = 0;
   ComboBox_GetText (TargetCombobox, CurText, DEFAULT_BUF_SIZE);
   FtpTrim (CurText);
   for (int i = 0; i < countof (ServerNames); i++)
@@ -858,7 +858,7 @@ void SpellChecker::ApplyMenuActions ()
 // For now just int option, later maybe choose option type in wParam
 void SpellChecker::WriteSetting (LPARAM lParam)
 {
-  std::pair<TCHAR *, DWORD> *x = (std::pair<TCHAR *, DWORD> *) lParam;
+  std::pair<wchar_t *, DWORD> *x = (std::pair<wchar_t *, DWORD> *) lParam;
   if (SettingsToSave->find (x->first) == SettingsToSave->end ())
     (*SettingsToSave)[x->first] = x->second;
   else
@@ -875,10 +875,10 @@ void SpellChecker::SetCheckComments (BOOL Value)
 
 void SpellChecker::CheckFileName ()
 {
-  TCHAR *Context = 0;
-  TCHAR *Token = 0;
-  TCHAR *FileTypesCopy = 0;
-  TCHAR FullPath[MAX_PATH];
+  wchar_t *Context = 0;
+  wchar_t *Token = 0;
+  wchar_t *FileTypesCopy = 0;
+  wchar_t FullPath[MAX_PATH];
   SetString (FileTypesCopy, FileTypes);
   Token = _tcstok_s (FileTypesCopy, _T(";"), &Context);
   CheckTextEnabled = !CheckThose;
@@ -1483,7 +1483,7 @@ void SpellChecker::ProcessMenuResult (UINT MenuId)
       else
         Result = MenuId - GetLangsMenuIdStart ();
 
-      TCHAR *LangString = 0;
+      wchar_t *LangString = 0;
       if (Result == MULTIPLE_LANGS)
       {
         LangString = _T ("<MULTIPLE>");
@@ -1520,7 +1520,7 @@ void SpellChecker::FillSuggestionsMenu (HMENU Menu)
 
   int Pos = WUCPosition;
   Sci_TextRange Range;
-  TCHAR *Buf = 0;
+  wchar_t *Buf = 0;
   Range.chrg.cpMin = WUCPosition;
   Range.chrg.cpMax = WUCPosition + WUCLength;
   Range.lpstrText = new char [WUCLength + 1];
@@ -1562,7 +1562,7 @@ void SpellChecker::FillSuggestionsMenu (HMENU Menu)
   if (LastSuggestions->size () > 0)
     SuggestionMenuItems->push_back (new SuggestionsMenuItem (_T (""), 0, MenuFlagEnum::SEPARATOR));
 
-  TCHAR *MenuString = new TCHAR [WUCLength + 50 + 1]; // Add "" to dictionary
+  wchar_t *MenuString = new wchar_t [WUCLength + 50 + 1]; // Add "" to dictionary
   char *BufUtf8 = 0;
   switch (CurrentEncoding)
   {
@@ -1636,7 +1636,7 @@ void SpellChecker::SetCheckThose (int CheckThoseArg)
   CheckThose = CheckThoseArg;
 }
 
-void SpellChecker::SetFileTypes (TCHAR *FileTypesArg)
+void SpellChecker::SetFileTypes (wchar_t *FileTypesArg)
 {
   SetString (FileTypes, FileTypesArg);
 }
@@ -1667,17 +1667,17 @@ void SpellChecker::SetUnderlineStyle (int Value)
   UnderlineStyle = Value;
 }
 
-void SpellChecker::SetProxyUserName (TCHAR *Str)
+void SpellChecker::SetProxyUserName (wchar_t *Str)
 {
   SetString (ProxyUserName, Str);
 }
 
-void SpellChecker::SetProxyHostName (TCHAR *Str)
+void SpellChecker::SetProxyHostName (wchar_t *Str)
 {
   SetString (ProxyHostName, Str);
 }
 
-void SpellChecker::SetProxyPassword (TCHAR *Str)
+void SpellChecker::SetProxyPassword (wchar_t *Str)
 {
   SetString (ProxyPassword, Str);
 }
@@ -1702,17 +1702,17 @@ void SpellChecker::SetProxyType (int Value)
   ProxyType = Value;
 }
 
-TCHAR *SpellChecker::GetProxyUserName ()
+wchar_t *SpellChecker::GetProxyUserName ()
 {
   return ProxyUserName;
 }
 
-TCHAR *SpellChecker::GetProxyHostName ()
+wchar_t *SpellChecker::GetProxyHostName ()
 {
   return ProxyHostName;
 }
 
-TCHAR *SpellChecker::GetProxyPassword ()
+wchar_t *SpellChecker::GetProxyPassword ()
 {
   return ProxyPassword;
 }
@@ -1749,11 +1749,11 @@ void SpellChecker::SetIgnore (BOOL IgnoreNumbersArg, BOOL IgnoreCStartArg, BOOL 
   IgnoreOneLetter = IgnoreOneLetterArg;
 }
 
-void SpellChecker::GetDefaultHunspellPath (TCHAR *&Path)
+void SpellChecker::GetDefaultHunspellPath (wchar_t *&Path)
 {
-  Path = new TCHAR[MAX_PATH];
+  Path = new wchar_t[MAX_PATH];
   _tcscpy (Path, IniFilePath);
-  TCHAR *Pointer = _tcsrchr (Path, _T ('\\'));
+  wchar_t *Pointer = _tcsrchr (Path, _T ('\\'));
   *Pointer = 0;
   _tcscat (Path, _T ("\\Hunspell"));
 }
@@ -1763,7 +1763,7 @@ void SpellChecker::SaveSettings ()
   FILE *Fp;
   _tfopen_s (&Fp, IniFilePath, _T ("w")); // Cleaning settings file (or creating it)
   fclose (Fp);
-  TCHAR *TBuf = 0;
+  wchar_t *TBuf = 0;
   if (!SettingsLoaded)
     return;
   SaveToIni (_T ("Autocheck"), AutoCheckText, 1);
@@ -1775,7 +1775,7 @@ void SpellChecker::SaveSettings ()
   SaveToIni (_T ("Remove_Dics_For_All_Users"), RemoveSystem, 0);
   SaveToIni (_T ("Show_Only_Known"), ShowOnlyKnown, TRUE);
   SaveToIni (_T ("Install_Dictionaries_For_All_Users"), InstallSystem, FALSE);
-  TCHAR Buf[DEFAULT_BUF_SIZE];
+  wchar_t Buf[DEFAULT_BUF_SIZE];
   for (int i = 0; i < countof (ServerNames); i++)
   {
     if (!*ServerNames[i])
@@ -1799,7 +1799,7 @@ void SpellChecker::SaveSettings ()
   SaveToIni (_T ("Ignore_One_Letter"), IgnoreOneLetter, 0);
   SaveToIni (_T ("Underline_Color"), UnderlineColor, 0x0000ff);
   SaveToIni (_T ("Underline_Style"), UnderlineStyle, INDIC_SQUIGGLE);
-  TCHAR *Path = 0;
+  wchar_t *Path = 0;
   GetDefaultAspellPath (Path);
   SaveToIni (_T ("Aspell_Path"), AspellPath, Path);
   CLEAN_AND_ZERO_ARR (Path);
@@ -1831,7 +1831,7 @@ void SpellChecker::SaveSettings ()
   SaveToIni (_T ("Proxy_Is_Anonymous"), ProxyAnonymous, TRUE);
   SaveToIni (_T ("Proxy_Type"), ProxyType, 0);
   SaveToIni (_T ("Recheck_Prevention_Type"), RecheckPreventionType, 0);
-  std::map<TCHAR *, DWORD, bool ( *)(TCHAR *, TCHAR *)>::iterator it = SettingsToSave->begin ();
+  std::map<wchar_t *, DWORD, bool ( *)(wchar_t *, wchar_t *)>::iterator it = SettingsToSave->begin ();
   for (; it != SettingsToSave->end (); ++it)
   {
     SaveToIni ((*it).first, LOWORD ((*it).second), HIWORD ((*it).second));
@@ -1875,8 +1875,8 @@ void SpellChecker::SetLibMode (int i)
 void SpellChecker::LoadSettings ()
 {
   char *BufUtf8 = 0;
-  TCHAR *Path = 0;
-  TCHAR *TBuf = 0;
+  wchar_t *Path = 0;
+  wchar_t *TBuf = 0;
   SettingsLoaded = TRUE;
   GetDefaultAspellPath (Path);
   LoadFromIni (AspellPath, _T ("Aspell_Path"), Path);
@@ -1944,7 +1944,7 @@ void SpellChecker::LoadSettings ()
   CLEAN_AND_ZERO_ARR (BufUtf8);
   LoadFromIni (ShowOnlyKnown, _T ("Show_Only_Known"), TRUE);
   LoadFromIni (InstallSystem, _T ("Install_Dictionaries_For_All_Users"), FALSE);
-  TCHAR Buf[DEFAULT_BUF_SIZE];
+  wchar_t Buf[DEFAULT_BUF_SIZE];
   for (int i = 0; i < countof (ServerNames); i++)
   {
     _stprintf (Buf, _T ("Server_Address[%d]"), i);
@@ -2054,13 +2054,13 @@ void SpellChecker::Cleanup()
   CLEAN_AND_ZERO_ARR (AspellPath);
 }
 
-void SpellChecker::SetAspellPath (const TCHAR *Path)
+void SpellChecker::SetAspellPath (const wchar_t *Path)
 {
   SetString (AspellPath, Path);
   AspellReinitSettings ();
 }
 
-void SpellChecker::SetHunspellPath (const TCHAR *Path)
+void SpellChecker::SetHunspellPath (const wchar_t *Path)
 {
   if (!Path || !*Path)
     return;
@@ -2068,7 +2068,7 @@ void SpellChecker::SetHunspellPath (const TCHAR *Path)
   HunspellReinitSettings (1);
 }
 
-void SpellChecker::SetHunspellAdditionalPath (const TCHAR *Path)
+void SpellChecker::SetHunspellAdditionalPath (const wchar_t *Path)
 {
   if (!Path || !*Path)
     return;
@@ -2076,7 +2076,7 @@ void SpellChecker::SetHunspellAdditionalPath (const TCHAR *Path)
   HunspellReinitSettings (1);
 }
 
-void SpellChecker::SaveToIni (const TCHAR *Name, const TCHAR *Value, const TCHAR *DefaultValue, BOOL InQuotes)
+void SpellChecker::SaveToIni (const wchar_t *Name, const wchar_t *Value, const wchar_t *DefaultValue, BOOL InQuotes)
 {
   if (!Name || !Value)
     return;
@@ -2087,7 +2087,7 @@ void SpellChecker::SaveToIni (const TCHAR *Name, const TCHAR *Value, const TCHAR
   if (InQuotes)
   {
     int Len = 1 + _tcslen (Value) + 1 + 1;
-    TCHAR *Buf = new TCHAR[Len];
+    wchar_t *Buf = new wchar_t[Len];
     _stprintf (Buf, _T ("\"%s\""), Value, Len - 3);
     WritePrivateProfileString (_T ("SpellCheck"), Name, Buf, IniFilePath);
     CLEAN_AND_ZERO_ARR (Buf);
@@ -2098,7 +2098,7 @@ void SpellChecker::SaveToIni (const TCHAR *Name, const TCHAR *Value, const TCHAR
   }
 }
 
-void SpellChecker::SaveToIni (const TCHAR *Name, int Value, int DefaultValue)
+void SpellChecker::SaveToIni (const wchar_t *Name, int Value, int DefaultValue)
 {
   if (!Name)
     return;
@@ -2106,12 +2106,12 @@ void SpellChecker::SaveToIni (const TCHAR *Name, int Value, int DefaultValue)
   if (Value == DefaultValue)
     return;
 
-  TCHAR Buf[DEFAULT_BUF_SIZE];
+  wchar_t Buf[DEFAULT_BUF_SIZE];
   _itot_s (Value, Buf, 10);
   SaveToIni (Name, Buf, 0);
 }
 
-void SpellChecker::SaveToIniUtf8 (const TCHAR *Name, const char *Value,  const char *DefaultValue, BOOL InQuotes)
+void SpellChecker::SaveToIniUtf8 (const wchar_t *Name, const char *Value,  const char *DefaultValue, BOOL InQuotes)
 {
   if (!Name || !Value)
     return;
@@ -2119,19 +2119,19 @@ void SpellChecker::SaveToIniUtf8 (const TCHAR *Name, const char *Value,  const c
   if (DefaultValue && strcmp (Value, DefaultValue) == 0)
     return;
 
-  TCHAR *Buf = 0;
+  wchar_t *Buf = 0;
   SetStringSUtf8 (Buf, Value);
   SaveToIni (Name, Buf, 0, InQuotes);
   CLEAN_AND_ZERO_ARR (Buf);
 }
 
-void SpellChecker::LoadFromIni (TCHAR *&Value, const TCHAR *Name, const TCHAR *DefaultValue, BOOL InQuotes)
+void SpellChecker::LoadFromIni (wchar_t *&Value, const wchar_t *Name, const wchar_t *DefaultValue, BOOL InQuotes)
 {
   if (!Name || !DefaultValue)
     return;
 
   CLEAN_AND_ZERO_ARR (Value);
-  Value = new TCHAR [DEFAULT_BUF_SIZE];
+  Value = new wchar_t [DEFAULT_BUF_SIZE];
 
   GetPrivateProfileString (_T ("SpellCheck"), Name, DefaultValue, Value, DEFAULT_BUF_SIZE, IniFilePath);
 
@@ -2152,26 +2152,26 @@ void SpellChecker::LoadFromIni (TCHAR *&Value, const TCHAR *Name, const TCHAR *D
   }
 }
 
-void SpellChecker::LoadFromIni (int &Value, const TCHAR *Name, int DefaultValue)
+void SpellChecker::LoadFromIni (int &Value, const wchar_t *Name, int DefaultValue)
 {
   if (!Name)
     return;
 
-  TCHAR BufDefault[DEFAULT_BUF_SIZE];
-  TCHAR *Buf = 0;
+  wchar_t BufDefault[DEFAULT_BUF_SIZE];
+  wchar_t *Buf = 0;
   _itot_s (DefaultValue, BufDefault, 10);
   LoadFromIni (Buf, Name, BufDefault);
   Value = _ttoi (Buf);
   CLEAN_AND_ZERO_ARR (Buf);
 }
 
-void SpellChecker::LoadFromIniUtf8 (char *&Value, const TCHAR *Name, const char *DefaultValue, BOOL InQuotes)
+void SpellChecker::LoadFromIniUtf8 (char *&Value, const wchar_t *Name, const char *DefaultValue, BOOL InQuotes)
 {
   if (!Name || !DefaultValue)
     return;
 
-  TCHAR *BufDefault = 0;
-  TCHAR *Buf = 0;
+  wchar_t *BufDefault = 0;
+  wchar_t *Buf = 0;
   SetStringSUtf8 (BufDefault, DefaultValue);
   LoadFromIni (Buf, Name, BufDefault);
   SetStringDUtf8 (Value, Buf);
@@ -2180,7 +2180,7 @@ void SpellChecker::LoadFromIniUtf8 (char *&Value, const TCHAR *Name, const char 
 }
 
 // Here parameter is in ANSI (may as well be utf-8 cause only English I guess)
-void SpellChecker::SetAspellLanguage (const TCHAR *Str)
+void SpellChecker::SetAspellLanguage (const wchar_t *Str)
 {
   SetString (AspellLanguage, Str);
 
@@ -2192,7 +2192,7 @@ void SpellChecker::SetAspellLanguage (const TCHAR *Str)
   }
   else
   {
-    TCHAR *TBuf = 0;
+    wchar_t *TBuf = 0;
     MultiLangMode = 0;
     SetString (TBuf, Str);
     AspellSpeller->SetLanguage (TBuf);
@@ -2201,7 +2201,7 @@ void SpellChecker::SetAspellLanguage (const TCHAR *Str)
   }
 }
 
-void SpellChecker::SetHunspellLanguage (const TCHAR *Str)
+void SpellChecker::SetHunspellLanguage (const wchar_t *Str)
 {
   SetString (HunspellLanguage, Str);
 
@@ -2237,13 +2237,13 @@ void SpellChecker::SetSuggestionsNum (int Num)
 // Here parameter is in UTF-8
 void SpellChecker::SetDelimiters (const char *Str)
 {
-  TCHAR *DestBuf = 0;
-  TCHAR *SrcBuf = 0;
+  wchar_t *DestBuf = 0;
+  wchar_t *SrcBuf = 0;
   SetString (DelimUtf8, Str);
   SetStringSUtf8 (SrcBuf, DelimUtf8);
   SetParsedString (DestBuf, SrcBuf);
   int TargetBufLength = _tcslen (DestBuf) + 5 + 1;
-  TCHAR *TargetBuf = new TCHAR [_tcslen (DestBuf) + 5 + 1];
+  wchar_t *TargetBuf = new wchar_t [_tcslen (DestBuf) + 5 + 1];
   _tcscpy (TargetBuf, DestBuf);
   _tcscat_s (TargetBuf, TargetBufLength, _T (" \n\r\t\v"));
   SetStringDUtf8 (DelimUtf8Converted, TargetBuf);
@@ -2261,8 +2261,8 @@ void SpellChecker::SetRecheckPreventionType (RecheckPreventionTypes::e Value)
 
 void SpellChecker::SetDelimiterException (const char *Str)
 {
-  TCHAR *DestBuf = 0;
-  TCHAR *SrcBuf = 0;
+  wchar_t *DestBuf = 0;
+  wchar_t *SrcBuf = 0;
   SetString (DelimExcUtf8, Str);
   SetStringSUtf8 (SrcBuf, DelimExcUtf8);
   SetParsedString (DestBuf, SrcBuf);
@@ -2273,14 +2273,14 @@ void SpellChecker::SetDelimiterException (const char *Str)
   CLEAN_AND_ZERO_ARR (SrcBuf);
 }
 
-void SpellChecker::SetMultipleLanguages (const TCHAR *MultiString, AbstractSpellerInterface *Speller)
+void SpellChecker::SetMultipleLanguages (const wchar_t *MultiString, AbstractSpellerInterface *Speller)
 {
-  TCHAR *Context = 0;
+  wchar_t *Context = 0;
   CLEAN_AND_ZERO_STRING_VECTOR (MultiLangList);
-  MultiLangList = new std::vector<TCHAR *>;
-  TCHAR *MultiStringCopy = 0;
-  TCHAR *Token = 0;
-  TCHAR *TBuf = 0;
+  MultiLangList = new std::vector<wchar_t *>;
+  wchar_t *MultiStringCopy = 0;
+  wchar_t *Token = 0;
+  wchar_t *TBuf = 0;
 
   SetString (MultiStringCopy, MultiString);
   Token = _tcstok_s (MultiStringCopy, _T ("|"), &Context);
@@ -2298,7 +2298,7 @@ void SpellChecker::SetMultipleLanguages (const TCHAR *MultiString, AbstractSpell
 
 BOOL SpellChecker::HunspellReinitSettings (BOOL ResetDirectory)
 {
-  TCHAR *TBuf = 0;
+  wchar_t *TBuf = 0;
   if (ResetDirectory)
   {
     HunspellSpeller->SetDirectory (HunspellPath);
@@ -2316,7 +2316,7 @@ BOOL SpellChecker::HunspellReinitSettings (BOOL ResetDirectory)
 
 BOOL SpellChecker::AspellReinitSettings ()
 {
-  TCHAR *TBuf = 0;
+  wchar_t *TBuf = 0;
   AspellSpeller->Init (AspellPath);
 
   if (_tcscmp (AspellLanguage, _T ("<MULTIPLE>")) != 0)
@@ -2491,7 +2491,7 @@ BOOL SpellChecker::CheckWord (char *Word, long Start, long End, BOOL ignoreProte
 
   ApplyConversions (Word);
 
-  TCHAR *Ts = 0;
+  wchar_t *Ts = 0;
   long SymbolsNum = 0;
   switch (CurrentEncoding)
   {
@@ -2974,9 +2974,9 @@ void SpellChecker::RecheckVisible (BOOL NotIntersectionOnly)
     ClearAllUnderlines ();
 }
 
-void SpellChecker::ErrorMsgBox (const TCHAR *message)
+void SpellChecker::ErrorMsgBox (const wchar_t *message)
 {
-  TCHAR buf [DEFAULT_BUF_SIZE];
+  wchar_t buf [DEFAULT_BUF_SIZE];
   _stprintf_s (buf, _T ("%s"), "DSpellCheck Error:", message, _tcslen (message));
   MessageBox (NppDataInstance->_nppHandle, message, _T("Error Happened!"), MB_OK | MB_ICONSTOP);
 }

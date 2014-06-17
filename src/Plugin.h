@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "PluginInterface.h"
 #include "SettingsDlg.h"
 
-const TCHAR NPP_PLUGIN_NAME[] = TEXT("DSpellCheck");
+const wchar_t NPP_PLUGIN_NAME[] = TEXT("DSpellCheck");
 
 const int nbFunc = 8;
 #define QUICK_LANG_CHANGE_ITEM 3
@@ -64,7 +64,7 @@ void commandMenuCleanUp();
 //
 // Function which sets your command
 //
-bool setCommand(size_t index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc, ShortcutKey *sk = NULL, bool check0nInit = false);
+bool setCommand(size_t index, wchar_t *cmdName, PFUNCPLUGINCMD pFunc, ShortcutKey *sk = NULL, bool check0nInit = false);
 
 // WARNING: Consequent messages guaranteed to be delivered in order, only if they are in corresponding order in enum
 // TODO: Change events system to PostThreadMessage
@@ -154,7 +154,7 @@ FuncItem *get_funcItem ();
 void SetModifiedZoneShared (long Start, long End);
 void GetModifiedZoneShared (long &Start, long &End);
 void PostMessageToMainThread (UINT Msg, WPARAM WParam, LPARAM LParam);
-void GetDefaultHunspellPath_ (TCHAR *&Path);
+void GetDefaultHunspellPath_ (wchar_t *&Path);
 HANDLE *GethEvent ();
 void SetContextMenuIdStart (int Id);
 void SetLangsMenuIdStart (int Id);
