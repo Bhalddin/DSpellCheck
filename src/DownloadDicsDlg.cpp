@@ -54,9 +54,10 @@ void DownloadDicsDlg::DoDialog ()
 
 void DownloadDicsDlg::FillFileList ()
 {
-  wchar_t Buf[DEFAULT_BUF_SIZE];
-  ComboBox_GetText (HAddress, Buf, DEFAULT_BUF_SIZE);
-  GetDownloadDics ()->DoFtpOperation (FILL_FILE_LIST, Buf);
+  int textLength = ComboBox_GetTextLength (HAddress);
+  vector<wchar_t> buf (textLength + 1);
+  ComboBox_GetText (HAddress, buf.data (), buf.size ());
+  GetDownloadDics ()->DoFtpOperation (FILL_FILE_LIST, buf.data ());
 }
 
 void DownloadDicsDlg::OnDisplayAction ()
@@ -476,7 +477,7 @@ void DownloadDicsDlg::SetCancelPressed (BOOL Value)
 
 #define INITIAL_BUFFER_SIZE 50 * 1024
 #define INITIAL_SMALL_BUFFER_SIZE 10 * 1024
-void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, wchar_t *Address, wchar_t *FileName, wchar_t *Location)
+void DownloadDicsDlg::DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, const wchar_t *Address, const wchar_t *FileName, const wchar_t *Location)
 {
   wchar_t *ProxyFinalString = new wchar_t [wcslen (SpellCheckerInstance->GetProxyHostName ()) + 10];
   char *FileBuffer = 0;
@@ -748,7 +749,7 @@ cleanup:
   CLEAN_AND_ZERO_ARR (Url);
 }
 
-void DownloadDicsDlg::DoFtpOperation (FTP_OPERATION_TYPE Type, wchar_t *Address, wchar_t *FileName, wchar_t *Location)
+void DownloadDicsDlg::DoFtpOperation (FTP_OPERATION_TYPE Type, const wchar_t *Address, const wchar_t *FileName, const wchar_t *Location)
 {
   wchar_t *Folders = 0;
   Observer *ProgressUpdater = 0;

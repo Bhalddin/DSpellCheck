@@ -44,7 +44,7 @@ public:
   void init (HINSTANCE hInst, HWND Parent, SpellChecker *SpellCheckerInstanceArg);
   BOOL CALLBACK run_dlgProc (UINT message, WPARAM wParam, LPARAM lParam);
   void UpdateListBox ();
-  void DoFtpOperation (FTP_OPERATION_TYPE Type, wchar_t *Address, wchar_t *FileName = 0, wchar_t *Location = 0);
+  void DoFtpOperation (FTP_OPERATION_TYPE Type, const wchar_t *Address, const wchar_t *FileName = 0, const wchar_t *Location = 0);
   void DownloadSelected ();
   void FillFileList ();
   void RemoveTimer ();
@@ -56,7 +56,7 @@ public:
   void Refresh ();
   DWORD AskReplacementMessage (wchar_t *DicName);
 private:
-  void DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, wchar_t *Address, wchar_t *FileName, wchar_t *Location);
+  void DoFtpOperationThroughHttpProxy (FTP_OPERATION_TYPE Type, const wchar_t *Address, const wchar_t *FileName, const wchar_t *Location);
 private:
   std::vector<LanguageName> *CurrentLangs;
   std::vector<LanguageName> *CurrentLangsFiltered;

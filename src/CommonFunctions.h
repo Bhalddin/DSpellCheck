@@ -80,5 +80,6 @@ char *strtok_s_nonalnum (char *s1, const char *delimit, char **context);
 wchar_t *wcstok_s_nonalnum (wchar_t *s1, const wchar_t *delimit, wchar_t **context);
 
 void CleanAndZeroWordList (WordSet *&WordListInstance);
-
+vector<wchar_t> GetPrivateProfileString_optimized (const wchar_t *lpAppName, const wchar_t *lpKeyName, const wchar_t *lpDefault, const wchar_t *lpFileName);
+bool str2int (int &i, const wchar_t *s, int base = 10);
 #endif // COMMON_FUNCTIONS_H;

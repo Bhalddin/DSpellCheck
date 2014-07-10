@@ -222,8 +222,8 @@ private:
   char *DelimExcUtf8Converted;
   char *DelimExcConverted;
   wchar_t *DelimExcConvertedWchar;
-  wchar_t *ServerNames[3]; // Only user ones, there'll also be bunch of predetermined ones
-  wchar_t *DefaultServers[3];
+  wstring ServerNames[3]; // Only user ones, there'll also be bunch of predetermined ones
+  wstring DefaultServers[3];
   int LastUsedAddress; // equals USER_SERVER_CONST + num if user address is used, otherwise equals number of default server
   int AddressIsSet;
   wchar_t *FileTypes;

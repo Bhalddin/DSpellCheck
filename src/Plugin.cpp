@@ -517,12 +517,10 @@ void commandMenuInit()
   // make your plugin config file full file path name
   PathAppend (IniFilePath, configFileName);
 
-  wchar_t Buf[DEFAULT_BUF_SIZE];
-  wchar_t *EndPtr;
+  vector<wchar_t> Buf = GetPrivateProfileString_optimized (L"SpellCheck", L"Recheck_Delay", L"500", IniFilePath);
   int x;
-  GetPrivateProfileString (L"SpellCheck", L"Recheck_Delay", L"500", Buf, DEFAULT_BUF_SIZE, IniFilePath);
-  x = wcstol (Buf, &EndPtr, 10);
-  if (*EndPtr)
+
+  if (!str2int (x, Buf.data ()))
     SetRecheckDelay (500, 0);
   else
     SetRecheckDelay (x, 0);

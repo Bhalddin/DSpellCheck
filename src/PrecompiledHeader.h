@@ -31,6 +31,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <wchar.h>
 #include <vector>
 #include <Shlobj.h>
+#include <string>
+#include <iosfwd>
+#include <sstream>
+
+using std::wstring;
+using std::vector;
+using std::wstringstream;
+using std::map;
 
 #if (_MSC_VER >= 1700)
 #define _CRTDBG_MAP_ALLOC

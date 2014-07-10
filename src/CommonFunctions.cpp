@@ -1117,4 +1117,31 @@ void CleanAndZeroWordList (WordSet *&WordListInstance)
   CLEAN_AND_ZERO (WordListInstance);
 }
 
+vector<wchar_t> GetPrivateProfileString_optimized  (const wchar_t *lpAppName, const wchar_t *lpKeyName, const wchar_t *lpDefault, const wchar_t *lpFileName)
+{
+  static const int initial_size = 64;
+  vector<wchar_t> t (initial_size);
+  int sizeReceived = 0;
+  do
+    {
+      int sizeBound = sizeReceived * 3 / 2;
+      if ((int) t.size () < sizeBound)
+        t.resize (sizeBound);
+      sizeReceived = GetPrivateProfileString (lpAppName, lpKeyName, lpDefault, t.data (), t.size (), lpFileName);
+    }
+  while ((int) t.size () <= sizeReceived);
+  return t;
+}
 
+bool str2int (int &i, const wchar_t *s, int base = 10)
+{
+    long  l;
+    wchar_t *end;
+    l = wcstol (s, &end, base);
+
+    if (*s == L'\0' || *end != L'\0')
+        return false;
+
+    i = static_cast<int> (l);
+    return true;
+}

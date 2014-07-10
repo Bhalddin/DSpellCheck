@@ -86,9 +86,9 @@ SpellChecker::SpellChecker (const wchar_t *IniFilePathArg, SettingsDlg *Settings
   memset (ServerNames, 0, sizeof (ServerNames));
   memset (DefaultServers, 0, sizeof (DefaultServers));
   AddressIsSet = 0;
-  SetString (DefaultServers[0], L"ftp://ftp.snt.utwente.nl/pub/software/openoffice/contrib/dictionaries/");
-  SetString (DefaultServers[1], L"ftp://sunsite.informatik.rwth-aachen.de/pub/mirror/OpenOffice/contrib/dictionaries/");
-  SetString (DefaultServers[2], L"ftp://gd.tuwien.ac.at/office/openoffice/contrib/dictionaries/");
+  DefaultServers[0] = L"ftp://ftp.snt.utwente.nl/pub/software/openoffice/contrib/dictionaries/";
+  DefaultServers[1] = L"ftp://sunsite.informatik.rwth-aachen.de/pub/mirror/OpenOffice/contrib/dictionaries/";
+  DefaultServers[2] = L"ftp://gd.tuwien.ac.at/office/openoffice/contrib/dictionaries/";
   CurrentLangs = 0;
   DecodeNames = FALSE;
   ResetHotSpotCache ();
@@ -192,10 +192,6 @@ SpellChecker::~SpellChecker ()
   CLEAN_AND_ZERO_ARR (ProxyUserName);
   CLEAN_AND_ZERO_ARR (ProxyPassword);
   CLEAN_AND_ZERO_STRING_VECTOR (MultiLangList);
-  for (int i = 0; i < countof (ServerNames); i++)
-    CLEAN_AND_ZERO_ARR (ServerNames[i]);
-  for (int i = 0; i < countof (DefaultServers); i++)
-    CLEAN_AND_ZERO_ARR (DefaultServers[i]);
 
   std::map<wchar_t *, DWORD, bool ( *)(wchar_t *, wchar_t *)>::iterator it = SettingsToSave->begin ();
   for (; it != SettingsToSave->end (); ++it)
@@ -285,37 +281,30 @@ BOOL WINAPI SpellChecker::NotifyMessage (UINT Msg, WPARAM wParam, LPARAM lParam)
     break;
   case TM_ADD_USER_SERVER:
     {
-      wchar_t *Name = (wchar_t *) wParam;
-      wchar_t *TrimmedName = 0;
-      SetString (TrimmedName, Name);
-      FtpTrim (TrimmedName);
-      wchar_t *Buf = 0;
+      wstring Name (reinterpret_cast<wchar_t *> (wParam));
+      vector<wchar_t> TrimmedName (Name.begin (), Name.end ());
+      FtpTrim (TrimmedName.data ());
       for (int i = 0; i < countof (DefaultServers); i++)
       {
-        SetString (Buf, DefaultServers[i]);
-        FtpTrim (Buf);
-        if (wcscmp (Buf, TrimmedName) == 0)
+        vector<wchar_t> Buf (DefaultServers[i].begin (), DefaultServers[i].end ());
+        FtpTrim (Buf.data ());
+        if (Buf == TrimmedName)
           goto add_user_server_cleanup; // Nothing is done in this case
       }
       for (int i = 0; i < countof (ServerNames); i++)
       {
-        SetString (Buf, ServerNames[i]);
-        FtpTrim (Buf);
-        if (wcscmp (Buf, TrimmedName) == 0)
+        vector<wchar_t> Buf (ServerNames[i].begin (), ServerNames[i].end ());
+        FtpTrim (Buf.data ());
+        if (Buf == TrimmedName)
           goto add_user_server_cleanup; // Nothing is done in this case
       }
       // Then we're adding finally
-      CLEAN_AND_ZERO_ARR (ServerNames[countof (ServerNames) - 1]);
       for (int i = countof (ServerNames) - 1; i > 0; i--)
       {
         ServerNames[i] = ServerNames[i - 1];
       }
-      ServerNames[0] = 0;
-      SetString (ServerNames[0], Name);
-add_user_server_cleanup:
-      CLEAN_AND_ZERO_ARR (Buf);
-      CLEAN_AND_ZERO_ARR (Name);
-      CLEAN_AND_ZERO_ARR (TrimmedName);
+      ServerNames[0] = Name;
+add_user_server_cleanup: // TODO: Use RAAI
       ResetDownloadCombobox ();
       SaveSettings ();
     }
@@ -792,8 +781,9 @@ void SpellChecker::FillDownloadDics ()
 void SpellChecker::ResetDownloadCombobox ()
 {
   HWND TargetCombobox = GetDlgItem (GetDownloadDics ()->getHSelf (), IDC_ADDRESS);
-  wchar_t Buf[DEFAULT_BUF_SIZE];
-  ComboBox_GetText (TargetCombobox, Buf, DEFAULT_BUF_SIZE);
+  vector<wchar_t> Buf (ComboBox_GetTextLength (TargetCombobox) + 1);
+
+  ComboBox_GetText (TargetCombobox, Buf.data (), Buf.size ());
   if (AddressIsSet)
   {
     PreserveCurrentAddressIndex ();
@@ -801,12 +791,12 @@ void SpellChecker::ResetDownloadCombobox ()
   ComboBox_ResetContent (TargetCombobox);
   for (int i = 0; i < countof (DefaultServers); i++)
   {
-    ComboBox_AddString (TargetCombobox, DefaultServers[i]);
+    ComboBox_AddString (TargetCombobox, DefaultServers[i].data ());
   }
   for (int i = 0; i < countof (ServerNames); i++)
   {
-    if (*ServerNames[i])
-      ComboBox_AddString (TargetCombobox, ServerNames[i]);
+    if (!ServerNames[i].empty ())
+      ComboBox_AddString (TargetCombobox, ServerNames[i].data ());
   }
   if (LastUsedAddress < USER_SERVER_CONST)
     ComboBox_SetCurSel (TargetCombobox, LastUsedAddress);
@@ -820,33 +810,30 @@ void SpellChecker::PreserveCurrentAddressIndex ()
   HWND TargetCombobox = GetDlgItem (GetDownloadDics ()->getHSelf (), IDC_ADDRESS);
   if (!TargetCombobox)
     return;
-  wchar_t CurText [DEFAULT_BUF_SIZE];
-  wchar_t *Buf = 0;
-  ComboBox_GetText (TargetCombobox, CurText, DEFAULT_BUF_SIZE);
-  FtpTrim (CurText);
+
+  vector<wchar_t> CurText (ComboBox_GetTextLength (TargetCombobox) + 1);
+  ComboBox_GetText (TargetCombobox, CurText.data (), CurText.size ());
+  FtpTrim (CurText.data ());
   for (int i = 0; i < countof (ServerNames); i++)
   {
-    SetString (Buf, DefaultServers[i]);
-    FtpTrim (Buf);
-    if (wcscmp (Buf, CurText) == 0)
+    vector<wchar_t> Buf (DefaultServers[i].begin (), DefaultServers[i].end ());
+    FtpTrim (Buf.data ());
+    if (Buf == CurText)
     {
       LastUsedAddress = i;
-      goto cleanup;
     }
   };
   for (int i = 0; i < countof (ServerNames); i++)
   {
-    SetString (Buf, ServerNames[i]);
-    FtpTrim (Buf);
-    if (wcscmp (Buf, CurText) == 0)
+    vector<wchar_t> Buf (ServerNames[i].begin (), ServerNames[i].end ());
+    FtpTrim (Buf.data ());
+    if (Buf == CurText)
     {
       LastUsedAddress = USER_SERVER_CONST + i;
-      goto cleanup;
     }
   }
   LastUsedAddress = 0;
-cleanup:
-  CLEAN_AND_ZERO_ARR (Buf);
+
 }
 
 /*
